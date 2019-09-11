@@ -60,7 +60,11 @@ public class Picture extends TwoSided<Picture> {
                      break condition;
                   }
                }
-               p.parentCount++;
+               if (isNew) {
+                  String search = name + ":parCount:";
+                  identifier.pictures = identifier.pictures.replace(search + p.parentCount,
+                          search + ++p.parentCount);
+               }
                parent.children.add(p);
             }
             p.addImages(images, parent, identifier, sfs, isNew);
@@ -73,15 +77,16 @@ public class Picture extends TwoSided<Picture> {
    /**
     * This constructor is used only to create images.
     */
-   private Picture(Picture pic, Chapter parent, MainChapter identifier, int[] sf, File save, String fullName, boolean isNew) throws IOException {
-      super(fullName, identifier, sf, false, IMAGES);
+   private Picture(Picture pic, Chapter parent, MainChapter identifier, int[] sf,
+           File save, File destination, boolean isNew) throws IOException {
+      super(destination.getName(), identifier, sf, false, IMAGES);
       children.put(parent, new Picture[]{pic});
+      picParentCount(isNew);
       if (isNew) {
-         File img = new File(identifier.dir.getPath() + "\\Pictures\\" + fullName);
-         if (!img.exists()) {
-            try (BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(img));
+         if (!destination.exists()) {
+            try (BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(destination));
                     BufferedInputStream bis = new BufferedInputStream(new FileInputStream(save))) {
-               byte[] buffer = new byte[1024];
+               byte[] buffer = new byte[8192];
                int amount;
                while ((amount = bis.read(buffer)) != -1) {
                   bos.write(buffer, 0, amount);
@@ -94,10 +99,26 @@ public class Picture extends TwoSided<Picture> {
    /**
     * This constructor is used only to create Pictures.
     */
-   private Picture(String name, List<File> images, Chapter parent, MainChapter identifier, List<int[]> sfs, int[] pSF, boolean isNew) throws IOException {
+   private Picture(String name, List<File> images, Chapter parent, MainChapter identifier,
+           List<int[]> sfs, int[] pSF, boolean isNew) throws IOException {
       super(name, identifier, pSF, true, ELEMENTS);
+      picParentCount(isNew);
       addImages(images, parent, identifier, sfs, isNew);
       parent.children.add(this);
+   }
+
+   private void picParentCount(boolean isNew) {
+      String search = name + ":parCount:";
+      try {
+         parentCount = Integer.parseInt(getData(identifier.pictures, search));
+      } catch (ArrayIndexOutOfBoundsException ex) {
+         parentCount = 0;
+         identifier.pictures += search + "0\n";//kam s tim
+      }
+      if (isNew) {
+         identifier.pictures = identifier.pictures.replace(search + parentCount,
+                 search + ++parentCount);
+      }
    }
 
    /**
@@ -107,48 +128,50 @@ public class Picture extends TwoSided<Picture> {
     * @param parent Chapter containing this picture
     * @param sfs the successes and fails for every image
     */
-   private void addImages(List<File> images, Chapter parent, MainChapter identifier, List<int[]> sfs, boolean isNew) throws IOException {
+   private void addImages(List<File> images, Chapter parent, MainChapter identifier,
+           List<int[]> sfs, boolean isNew) throws IOException {
       if (children.get(parent) == null) {
          children.put(parent, new Picture[0]);
       }
       Picture[] imgs = Arrays.copyOf(children.get(parent), images.size() + children.get(parent).length);
       int differ = imgs.length - images.size();
       for (int i = 0; i < images.size(); i++) {
-         String imgName;
+         File pic;
          if (isNew) {
-            int serialINum = 0;
-            File imgDir = new File(identifier.dir.getPath() + "\\Pictures");
-            String names[] = imgDir.list();
-            for (int j = 0; j < names.length; j++) {
-               if (names[j].contains(parent.toString() + '.' + this.toString())) {
-                  serialINum++;
-               }
-            }
-            String[] end = images.get(i).toString().split("\\.");
-            imgName = parent.toString() + '.' + this.toString() + ' ' + serialINum + '.' + end[end.length - 1];
+            int serialINum = -1;
+            String[] fix = images.get(i).toString().split("\\.");
+            fix[1] = '.' + fix[fix.length - 1];
+            fix[0] = identifier.dir.getPath() + "\\Pictures\\" + this.name + ' ';
+            do {
+               serialINum++;
+               pic = new File(fix[0] + serialINum + fix[1]);
+            } while (pic.exists());
          } else {
-            imgName = images.get(i).toString();
+            pic = images.get(i);
          }
          imgs[i + differ] = new Picture(this, parent, identifier, (sfs == null ? null : sfs.get(i)), images.get(i),
-                 imgName, isNew);
+                 pic, isNew);
       }
       children.put(parent, imgs);
    }
 
    @Override
    public void destroy(Chapter parent) {
+      String search = name + ":parCount:";
+      identifier.pictures = identifier.pictures.replace(search + parentCount + '\n',
+              (--parentCount == 0 ? "" : (search + parentCount + '\n')));
       if (isMain) {
          for (Picture child : children.get(parent)) {
-            child.resize(parent, this);
+            child.remove(parent, this);
             child.destroy(parent);
          }
          children.remove(parent);
          parent.children.remove(this);
-         if (--parentCount == 0) {
+      }
+      if (parentCount == 0) {
+         if (isMain) {
             ELEMENTS.get(identifier).remove(this);
-         }
-      } else {
-         if (--parentCount == 0) {
+         } else {
             IMAGES.get(identifier).remove(this);
             new File(identifier.dir.getPath() + "\\Pictures\\" + name).delete();
          }
@@ -162,7 +185,7 @@ public class Picture extends TwoSided<Picture> {
       return chdrn.toArray(new Picture[chdrn.size()]);
    }
 
-   private void resize(Chapter parent, Picture toRem) {
+   private void remove(Chapter parent, Picture toRem) {
       Picture[] prev = children.get(parent);
       Picture[] chdrn = new Picture[prev.length - 1];
       for (int i = 0; i < chdrn.length; i++) {
@@ -172,17 +195,6 @@ public class Picture extends TwoSided<Picture> {
             chdrn[i] = prev[i];
          }
       }
-      if (isMain) {
-         int x = children.get(parent).length - 1;
-         renamer:
-         for (Picture img : children.get(parent)) {
-            if (img.toString().contains("" + x)) {
-               new File(identifier.dir.getPath() + "\\Pictures\\" + img).renameTo(new File(identifier.dir.getPath() + "\\Pictures\\" + toRem));
-               img.name = toRem.name;
-               break renamer;
-            }
-         }
-      }
       children.put(parent, chdrn);
    }
 
@@ -190,13 +202,14 @@ public class Picture extends TwoSided<Picture> {
    public void removeChild(Picture child, Chapter parent) {
       if (isMain) {
          child.destroy(parent);
-         resize(parent, child);
+         remove(parent, child);
       } else {
          throw new IllegalArgumentException("Child can be removed only by main Picture");
       }
    }
 
-   public static void readChildren(String s, String name, Chapter parent, MainChapter identifier, int[] sf, String desc) throws IOException {
+   public static void readChildren(String s, String name, Chapter parent,
+           MainChapter identifier, int[] sf, String desc) throws IOException {
       List<File> imgs = new LinkedList<>();
       List<String> descs = new ArrayList<>();
       List<int[]> sfs = new LinkedList<>();
@@ -221,7 +234,8 @@ public class Picture extends TwoSided<Picture> {
                         dscr = next(s, '"', '"', ':', ' ');
                         break;
                      default:
-                        throw new IllegalArgumentException("Unknown field while getting value for " + holder + ", char num: " + START);
+                        throw new IllegalArgumentException("Unknown field while getting value for "
+                                + holder + ", char num: " + START);
                   }
                }
             } catch (IllegalArgumentException iae) {

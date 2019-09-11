@@ -31,7 +31,7 @@ public class Formater {
    static String objDir;
    static final String DIR = "SchlMgr\\";
    public static final String CLASS = "class", NAME = "name", SUCCESS = "s", FAIL = "f", CHILDREN = "cdrn", DESC = "desc";
-   static String settings = null;
+   static String settings;
 
    public static String getPath() {
       return objDir;
@@ -42,7 +42,7 @@ public class Formater {
    }
 
    public static void setSettings(String newSetts) throws IOException {
-      saveSetts(settings = newSetts, new File(DIR + "options.txt"));
+      saveFile(settings = newSetts, new File(DIR + "options.txt"));
    }
 
    /**
@@ -52,17 +52,14 @@ public class Formater {
     * @throws IOException If an I/O error occured
     */
    public static void changeDir(File path) throws IOException {
-      String s = ("".equals(path.getPath()) ? "" : path.getPath() + "\\") + (path.getName().equals("School objects") ? "" : "School objects\\");
-      saveSetts(settings = settings.replace("objdir:" + objDir, "objdir:" + s), new File(DIR + "options.txt"));
+      String s = ("".equals(path.getPath()) ? "" : path.getPath() + "\\")
+              + (path.getName().equals("School objects") ? "" : "School objects\\");
+      saveFile(settings = settings.replace("objdir:" + objDir, "objdir:" + s), new File(DIR + "options.txt"));
       setDir(s);
    }
 
    private static void setDir(String path) throws IOException {
-      File dir = new File(objDir = path);
-      if (!dir.exists()) {
-         dir.mkdir();
-         dir.createNewFile();
-      }
+      createDir(objDir = path);
    }
 
    /**
@@ -71,23 +68,26 @@ public class Formater {
     * @throws IOException if an i/o error occures
     */
    public static void loadSettings() throws IOException {
-      File dir = new File(DIR);
+      createDir(DIR);
       File setts = new File(DIR + "options.txt");
-      START = 0;
-      if (!dir.exists()) {
-         dir.mkdir();
-         dir.createNewFile();
-      }
       if (setts.exists()) {
          settings = loadFile(setts);
-         setDir(settings.split("objdir:")[1].split("\n")[0]);
+         setDir(getData(settings, "objdir:"));
       } else {
          setDir(DIR + "School objects\\");
-         saveSetts(settings = new StringBuilder().append("objdir:").append(objDir).append("\nlanguage:cz\n").toString(), new File(DIR + "options.txt"));
+         saveFile(settings = new StringBuilder().append("objdir:").append(objDir).append("\nlanguage:cz\n").toString(), new File(DIR + "options.txt"));
       }
    }
 
-   static String loadFile(File toLoad) throws IOException {
+   public static String getData(String source, String objective) {
+      return getData(source, objective, "\n");
+   }
+
+   public static String getData(String source, String objective, String end) {
+      return source.split(objective)[1].split(end)[0];
+   }
+
+   public static String loadFile(File toLoad) throws IOException {
       StringBuilder sb = new StringBuilder();
       try (FileReader fr = new FileReader(toLoad)) {
          char[] buffer = new char[1024];
@@ -99,10 +99,19 @@ public class Formater {
       return sb.toString();
    }
 
-   static void saveSetts(String toSave, File save) throws IOException {
+   public static void saveFile(String toSave, File save) throws IOException {
       try (FileWriter fw = new FileWriter(save)) {
          fw.write(toSave);
       }
+   }
+
+   public static File createDir(String dirStr) throws IOException {
+      File dir = new File(dirStr);
+      if (!dir.exists()) {
+         dir.mkdir();
+         dir.createNewFile();
+      }
+      return dir;
    }
 
    /**
@@ -111,7 +120,7 @@ public class Formater {
     * @throws IOException If an I/O error occurs
     */
    public static void save(SaveChapter toSave) throws IOException {
-      saveSetts(WriteChildren.write(new StringBuilder(), 0, toSave, null).toString(), new File(toSave.save));
+      saveFile(WriteChildren.write(new StringBuilder(), 0, toSave, null).toString(), new File(toSave.save));
    }
 
    public static void saveAll(MainChapter toSave) throws IOException {
@@ -136,17 +145,19 @@ public class Formater {
       static StringBuilder write(StringBuilder sb, int tabs, Element e, Element cp) {
          tabs(sb, tabs, "{ \"").append(CLASS).append("\": \"").append(e.getClass()
                  .getName()).append("\", \"").append(NAME)
-                 .append("\": \"").append(e.toString().replaceAll("\\\\", "\\\\\\\\")
-                 .replaceAll("\"", "\\\\\"")).append("\", \"").append(SUCCESS)
+                 .append("\": \"").append(mkSafe(e)).append("\", \"").append(SUCCESS)
                  .append("\": ").append(e.getSuccess()).append(", \"").append(FAIL)
                  .append("\": ").append(e.getFail()).append(", \"");
          if (!e.description.equals("")) {
-            sb.append(DESC).append("\": \"").append(e.description
-                    .replaceAll("\\\\", "\\\\\\\\").replaceAll("\"", "\\\\\"")).append("\", \"");
+            sb.append(DESC).append("\": \"").append(mkSafe(e.description)).append("\", \"");
          }
          sb.append(CHILDREN).append("\": [");
          e.writeChildren(sb, ++tabs, cp);
          return sb.append(" ] }");
+      }
+
+      static String mkSafe(Object obj) {
+         return obj.toString().replaceAll("\\\\", "\\\\\\\\").replaceAll("\"", "\\\\\"");
       }
 
       static StringBuilder tabs(StringBuilder sb, int tabs, String toWrite) {
@@ -171,7 +182,7 @@ public class Formater {
 
    }
 
-   public static int START = 0;
+   public static int START;
 
    public static MainChapter loadMain(File save) throws Exception {
       loadSCh(save, null);
@@ -186,9 +197,9 @@ public class Formater {
 
    public static void loadSCh(File toLoad, MainChapter identifier) throws IOException {
       String s = loadFile(toLoad);
+      START = 0;
       ReadChildren.dumpSpace(s, '{', ' ', '\t', '\n');
       ReadChildren.read(s, null, identifier);
-      START = 0;
    }
 
    public interface ReadChildren {
@@ -269,10 +280,9 @@ public class Formater {
 
    public static void main(String[] args) throws Exception {
       loadSettings();
-      MainChapter mch = loadMain(new File(objDir+"AJ\\AJ.json"));
-      for (SaveChapter sch : mch.getChildren()) {
-         loadSCh(new File(sch.save), sch.identifier);
-      }
+      MainChapter mch = loadMain(new File(objDir + "test\\test.json"));
+      SaveChapter sch = mch.getChildren()[1];
+      loadSCh(new File(sch.save), sch.identifier);
       saveAll(mch);
    }
 }

@@ -7,6 +7,7 @@ package objects;
 
 import static IOSystem.Formater.WriteChildren.tabs;
 import static IOSystem.Formater.*;
+import static IOSystem.Formater.WriteChildren.mkSafe;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -45,13 +46,11 @@ public abstract class TwoSided<T extends TwoSided> extends Element {
          } else {
             sb.append(',');
          }
-         tabs(sb, tabs, "{ \"").append(NAME).append("\": \"").append(e.toString()
-                 .replaceAll("\\\\", "\\\\\\\\").replaceAll("\"", "\\\\\""))
+         tabs(sb, tabs, "{ \"").append(NAME).append("\": \"").append(mkSafe(e))
                  .append("\", \"").append(SUCCESS).append("\": ").append(e.sf[0])
                  .append(", \"").append(FAIL).append("\": ").append(e.sf[1]);
          if (!e.description.equals("")) {
-            sb.append(" , \"").append(DESC).append("\": \"").append(e.description
-                    .replaceAll("\\\\", "\\\\\\\\").replaceAll("\"", "\\\\\"")).append('"');
+            sb.append(" , \"").append(DESC).append("\": \"").append(mkSafe(e.description)).append('"');
          }
          sb.append(" }");
       }

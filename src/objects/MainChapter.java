@@ -27,6 +27,7 @@ public class MainChapter extends SaveChapter {
    protected final List<SaveChapter> children = new ArrayList<>();
 
    public final File dir;
+   String pictures;
 
    /**
     *
@@ -36,21 +37,11 @@ public class MainChapter extends SaveChapter {
    public MainChapter(String name, int[] sf) throws IOException {
       super(name, IOSystem.Formater.getPath() + name + '\\' + name + ".json", sf);
       ELEMENTS.add(this);
-      dir = new File(IOSystem.Formater.getPath() + name);
-      if (!dir.exists()) {
-         dir.mkdir();
-         dir.createNewFile();
-      }
-      File picDir = new File(dir.getAbsolutePath() + "\\Pictures");
-      if (!picDir.exists()) {
-         picDir.mkdir();
-         picDir.createNewFile();
-      }
-      File chapDir = new File(dir.getAbsolutePath() + "\\Chapters");
-      if (!chapDir.exists()) {
-         chapDir.mkdir();
-         chapDir.createNewFile();
-      }
+      dir = createDir(IOSystem.Formater.getPath() + name);
+      createDir(dir.getPath() + "\\Pictures");
+      createDir(dir.getPath() + "\\Chapters");
+      File pics = new File(dir + "\\pictures.json");
+      pictures = (pics.exists() ? loadFile(pics) : "");
    }
 
    static void n() {
@@ -80,6 +71,11 @@ public class MainChapter extends SaveChapter {
 
    @Override
    public StringBuilder writeChildren(StringBuilder sb, int tabs, Element cp) {
+      try {
+         saveFile(pictures, new File(dir + "\\pictures.json"));
+      } catch (IOException ex) {
+         throw new IllegalArgumentException("Soemthing has gone wrong:\n" + ex.getMessage());
+      }
       boolean first = true;
       for (SaveChapter sch : children) {
          if (!sch.loaded || sch.children.isEmpty()) {
@@ -90,8 +86,7 @@ public class MainChapter extends SaveChapter {
          } else {
             sb.append(',');
          }
-         tabs(sb, tabs, "{ \"").append(NAME).append("\": \"").append(sch.toString()
-                 .replaceAll("\"", "\\\\\\\"").replaceAll("\\\\", "\\\\\\\\")).append("\", \"")
+         tabs(sb, tabs, "{ \"").append(NAME).append("\": \"").append(mkSafe(sch)).append("\", \"")
                  .append(SUCCESS).append("\": ").append(sch.getSuccess()).append(", \"")
                  .append(FAIL).append("\": ").append(sch.getFail()).append(" }");
       }
@@ -132,7 +127,7 @@ public class MainChapter extends SaveChapter {
          }
       }
       for (int i = 0; i < sfs.size(); i++) {
-         SaveChapter.mkElement(names.get(i), mch, sfs.get(i));
+         SaveChapter.mkElement(names.get(i), mch, sfs.get(i)).loaded = false;
       }
    }
 }

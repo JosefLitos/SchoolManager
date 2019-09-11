@@ -92,7 +92,7 @@ public abstract class Element implements WriteChildren {
       Formater.loadSettings();
       //Formater.changeDir(new File(""));
       List<Element> e = new ArrayList<>();
-      e.add(new MainChapter("AJ", new int[]{2, 3}));
+      e.add(new MainChapter("test", new int[]{2, 3}));
       e.add(SaveChapter.mkElement("8.5.", (MainChapter) e.get(0), new int[]{4, 5}));
       e.add(new Chapter("Society", (Chapter) e.get(1), (MainChapter) e.get(0), new int[]{6, 7}));
       Word.mkElement("hard", Arrays.asList("těžk\\ý\\á\\é", "těžce"),
@@ -103,14 +103,15 @@ public abstract class Element implements WriteChildren {
               (Chapter) e.get(2), (MainChapter) e.get(0), null, new int[]{1, 5}).children.get((Chapter) e.get(2))[1].description = "test2";
       e.add(Picture.mkElement("broskvoň", Arrays.asList(new File("D:\\asdf.jpg"),
               new File("D:\\_vyr_1013boskvon-Catherina.jpg")),
-              (Chapter) e.get(2), (MainChapter) e.get(0), null, null, true));
+              (Chapter) e.get(2), (MainChapter) e.get(0), null, new int[]{7,4}, true));
       e.add(SaveChapter.mkElement("6.8.", (MainChapter) e.get(0), new int[]{4, 5}));
-      Picture.mkElement("broskvoň", Arrays.asList(new File("C:\\Users\\InvisibleManCZ\\Pictures\\děložné rostliny\\broskvoň 1.jpg"),
-              new File("C:\\Users\\InvisibleManCZ\\Pictures\\děložné rostliny\\broskvoň 2.jpg"),
-              new File("C:\\Users\\InvisibleManCZ\\Pictures\\děložné rostliny\\broskvoň 3.jpg")),
+      Picture.mkElement("broskvoň", Arrays.asList(new File("D:\\Poznávačka\\k poznání\\broskvoň 1.jpg"),
+              new File("D:\\Poznávačka\\k poznání\\broskvoň 2.jpg"),
+              new File("D:\\Poznávačka\\k poznání\\broskvoň 3.jpg")),
               (Chapter) e.get(1), (MainChapter) e.get(0), null, new int[]{1, 5}, true).description = "biologie";
-      ((Picture) e.get(3)).children.get((Chapter) e.get(1))[0].description = "test";
-      //((Picture) e.get(3)).removeChild(((Picture) e.get(3)).children.get((Chapter) e.get(2))[1], (Chapter) e.get(2));
+      ((Picture) e.get(3)).children.get((Chapter) e.get(2))[1].description = "test";
+      Reference.mkElement(e.get(3), (MainChapter) e.get(0), SaveChapter.mkElement("reftest", (MainChapter) e.get(0), null), "8.5.");
+      ((Picture) e.get(3)).removeChild(((Picture) e.get(3)).children.get((Chapter) e.get(2))[1], (Chapter) e.get(2));
       //((SaveChapter)e.get(1)).destroy(null);
       Formater.saveAll((MainChapter) e.get(0));
    }
