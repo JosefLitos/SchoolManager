@@ -5,13 +5,10 @@
  */
 package objects;
 
-import static IOSystem.Formater.WriteChildren.tabs;
 import static IOSystem.Formater.*;
 import static IOSystem.Formater.ReadChildren.dumpSpace;
 import static IOSystem.Formater.ReadChildren.next;
-import static IOSystem.Formater.WriteChildren.mkSafe;
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -68,15 +65,13 @@ public class Reference extends Element {
    }
 
    @Override
-   public StringBuilder writeChildren(StringBuilder sb, int tabs, Element cp) {
-      tabs(sb, tabs, "{ \"").append(CLASS).append("\": \"").append(
-              reference.getClass().getName()).append("\", \"").append(NAME)
-              .append("\": \"").append(mkSafe(reference)).append("\", \"origin\": \"")
+   public StringBuilder write(int tabs, Element cp) {
+      return tabs(tabs, "{ ").add(this, true, true, false, false, false).append(", \"refCls\": \"")
+              .append(reference.getClass().getName()).append("\", \"origin\": \"")
               .append(mkSafe(originalContainer)).append("\" }");
-      return sb;
    }
 
-   public static void readChildren(String s, String name, Chapter parent, MainChapter identifier, int[] sf, String desc) throws IOException {
+   public static void readChildren(String s, String name, Chapter parent, MainChapter identifier, int[] sf, String desc) {
       String[] info = new String[3];
       String holder;
       dumpSpace(s, '{', ' ', '\n', '\t');

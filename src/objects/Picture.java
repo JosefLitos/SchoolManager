@@ -6,7 +6,6 @@
 package objects;
 
 import static IOSystem.Formater.*;
-import static IOSystem.Formater.ReadChildren.*;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -16,7 +15,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -46,7 +44,7 @@ public class Picture extends TwoSided<Picture> {
     * the same name and adds the new images.
     */
    public static final Picture mkElement(String name, List<File> images, Chapter parent,
-           MainChapter identifier, List<int[]> sfs, int[] iSF, boolean isNew) throws IOException {
+           MainChapter identifier, List<int[]> sfs, int[] iSF, boolean isNew) {
       if (ELEMENTS.get(identifier) == null) {
          ELEMENTS.put(identifier, new ArrayList<>());
          IMAGES.put(identifier, new ArrayList<>());
@@ -78,7 +76,7 @@ public class Picture extends TwoSided<Picture> {
     * This constructor is used only to create images.
     */
    private Picture(Picture pic, Chapter parent, MainChapter identifier, int[] sf,
-           File save, File destination, boolean isNew) throws IOException {
+           File save, File destination, boolean isNew) {
       super(destination.getName(), identifier, sf, false, IMAGES);
       children.put(parent, new Picture[]{pic});
       picParentCount(isNew);
@@ -91,6 +89,8 @@ public class Picture extends TwoSided<Picture> {
                while ((amount = bis.read(buffer)) != -1) {
                   bos.write(buffer, 0, amount);
                }
+            } catch (IOException ex) {
+               throw new IllegalArgumentException(ex);
             }
          }
       }
@@ -100,7 +100,7 @@ public class Picture extends TwoSided<Picture> {
     * This constructor is used only to create Pictures.
     */
    private Picture(String name, List<File> images, Chapter parent, MainChapter identifier,
-           List<int[]> sfs, int[] pSF, boolean isNew) throws IOException {
+           List<int[]> sfs, int[] pSF, boolean isNew) {
       super(name, identifier, pSF, true, ELEMENTS);
       picParentCount(isNew);
       addImages(images, parent, identifier, sfs, isNew);
@@ -129,7 +129,7 @@ public class Picture extends TwoSided<Picture> {
     * @param sfs the successes and fails for every image
     */
    private void addImages(List<File> images, Chapter parent, MainChapter identifier,
-           List<int[]> sfs, boolean isNew) throws IOException {
+           List<int[]> sfs, boolean isNew) {
       if (children.get(parent) == null) {
          children.put(parent, new Picture[0]);
       }
@@ -149,7 +149,8 @@ public class Picture extends TwoSided<Picture> {
          } else {
             pic = images.get(i);
          }
-         imgs[i + differ] = new Picture(this, parent, identifier, (sfs == null ? null : sfs.get(i)), images.get(i),
+         imgs[i + differ] = new Picture(this, parent, identifier,
+                 (sfs == null ? null : sfs.get(i)), images.get(i),
                  pic, isNew);
       }
       children.put(parent, imgs);
@@ -179,13 +180,7 @@ public class Picture extends TwoSided<Picture> {
    }
 
    @Override
-   public Picture[] getChildren() {
-      List<Picture> chdrn = new ArrayList<>();
-      children.values().forEach((t) -> chdrn.addAll(Arrays.asList(t)));
-      return chdrn.toArray(new Picture[chdrn.size()]);
-   }
-
-   private void remove(Chapter parent, Picture toRem) {
+   void remove(Chapter parent, Picture toRem) {
       Picture[] prev = children.get(parent);
       Picture[] chdrn = new Picture[prev.length - 1];
       for (int i = 0; i < chdrn.length; i++) {
@@ -199,59 +194,17 @@ public class Picture extends TwoSided<Picture> {
    }
 
    @Override
-   public void removeChild(Picture child, Chapter parent) {
-      if (isMain) {
-         child.destroy(parent);
-         remove(parent, child);
-      } else {
-         throw new IllegalArgumentException("Child can be removed only by main Picture");
-      }
+   Picture[] mkArray(int size) {
+      return new Picture[size];
    }
 
    public static void readChildren(String s, String name, Chapter parent,
-           MainChapter identifier, int[] sf, String desc) throws IOException {
-      List<File> imgs = new LinkedList<>();
-      List<String> descs = new ArrayList<>();
-      List<int[]> sfs = new LinkedList<>();
-      try {
-         while (dumpSpace(s, '{', ' ', ',', '\n', '\t')) {
-            File img = null;
-            String holder, dscr = null;
-            int[] isf = new int[2];
-            try {
-               while (!(holder = next(s, '"', '"', ' ', ',')).contains("}")) {
-                  switch (holder) {
-                     case NAME:
-                        img = new File(next(s, '"', '"', ' ', ':'));
-                        break;
-                     case SUCCESS:
-                        isf[0] = Integer.parseInt(next(s, ' ', ',', ':'));
-                        break;
-                     case FAIL:
-                        isf[1] = Integer.parseInt(next(s, ' ', ' ', ':'));
-                        break;
-                     case DESC:
-                        dscr = next(s, '"', '"', ':', ' ');
-                        break;
-                     default:
-                        throw new IllegalArgumentException("Unknown field while getting value for "
-                                + holder + ", char num: " + START);
-                  }
-               }
-            } catch (IllegalArgumentException iae) {
-               if (!iae.getMessage().contains("'}'")) {
-                  throw iae;
-               }
-            }
-            imgs.add(img);
-            descs.add(dscr);
-            sfs.add(isf);
-         }
-      } catch (IllegalArgumentException iae) {
-         if (!iae.getMessage().contains("']'")) {
-            throw iae;
-         }
-      }
+           MainChapter identifier, int[] sf, String desc) {
+      List[] info = TwoSided.readChildren(s);
+      List<File> imgs = new ArrayList<>();
+      info[0].forEach((img) -> imgs.add(new File(img.toString())));
+      List<String> descs = info[1];
+      List<int[]> sfs = info[2];
       mkElement(name, imgs, parent, identifier, sfs, sf, false).description = desc;
       for (int i = 0; i < imgs.size(); i++) {
          if (descs.get(i) == null) {

@@ -5,12 +5,9 @@
  */
 package objects;
 
-import IOSystem.Formater;
 import static IOSystem.Formater.*;
 import static IOSystem.Formater.ReadChildren.*;
-import static IOSystem.Formater.WriteChildren.*;
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -34,7 +31,7 @@ public class MainChapter extends SaveChapter {
     * @param name name of the hierarchy
     * @param sf the number of successes and fails for this hierarchy
     */
-   public MainChapter(String name, int[] sf) throws IOException {
+   public MainChapter(String name, int[] sf) {
       super(name, IOSystem.Formater.getPath() + name + '\\' + name + ".json", sf);
       ELEMENTS.add(this);
       dir = createDir(IOSystem.Formater.getPath() + name);
@@ -64,18 +61,15 @@ public class MainChapter extends SaveChapter {
    /**
     * This methos saves this MainChapter and then removes itself from the list.
     */
-   public void close() throws IOException {
-      Formater.save(this);
+   public void close() {
+      save(this);
       ELEMENTS.remove(this);
    }
 
    @Override
-   public StringBuilder writeChildren(StringBuilder sb, int tabs, Element cp) {
-      try {
-         saveFile(pictures, new File(dir + "\\pictures.json"));
-      } catch (IOException ex) {
-         throw new IllegalArgumentException("Soemthing has gone wrong:\n" + ex.getMessage());
-      }
+   public StringBuilder write(int tabs, Element cp) {
+      tabs(tabs++, "{ ").add(this, true, true, true, true, true);
+      saveFile(pictures, new File(dir + "\\pictures.json"));
       boolean first = true;
       for (SaveChapter sch : children) {
          if (!sch.loaded || sch.children.isEmpty()) {
@@ -86,14 +80,12 @@ public class MainChapter extends SaveChapter {
          } else {
             sb.append(',');
          }
-         tabs(sb, tabs, "{ \"").append(NAME).append("\": \"").append(mkSafe(sch)).append("\", \"")
-                 .append(SUCCESS).append("\": ").append(sch.getSuccess()).append(", \"")
-                 .append(FAIL).append("\": ").append(sch.getFail()).append(" }");
+         tabs(tabs, "{ ").add(sch, false, true, true, true, false).append(" }");
       }
-      return sb;
+      return sb.append(" ] }");
    }
 
-   public static void readChildren(String s, String name, Chapter parent, MainChapter identifier, int[] sf, String desc) throws IOException {
+   public static void readChildren(String s, String name, Chapter parent, MainChapter identifier, int[] sf, String desc) {
       MainChapter mch = new MainChapter(name, sf);
       mch.description = desc;
       List<String> names = new ArrayList<>();

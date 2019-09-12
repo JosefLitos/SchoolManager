@@ -1,13 +1,9 @@
 package objects;
 
-import static IOSystem.Formater.*;
-import static IOSystem.Formater.ReadChildren.*;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -36,7 +32,8 @@ public class Word extends TwoSided<Word> {
     * if the word doesn't exist yet, otherwise returns the word object with the
     * same name and adds the new translations.
     */
-   public static final Word mkElement(String name, List<String> translates, Chapter parent, MainChapter identifier, List<int[]> sfs, int[] wSF) {
+   public static final Word mkElement(String name, List<String> translates,
+           Chapter parent, MainChapter identifier, List<int[]> sfs, int[] wSF) {
       if (ELEMENTS.get(identifier) == null) {
          ELEMENTS.put(identifier, new ArrayList<>());
          TRANSLATES.put(identifier, new ArrayList<>());
@@ -63,7 +60,8 @@ public class Word extends TwoSided<Word> {
    /**
     * This constructor is used only to create Words.
     */
-   private Word(String name, List<String> translates, Chapter parent, MainChapter identifier, List<int[]> sfs, int[] tSF) {
+   private Word(String name, List<String> translates, Chapter parent,
+           MainChapter identifier, List<int[]> sfs, int[] tSF) {
       super(name, identifier, tSF, true, ELEMENTS);
       addTranslates(translates, parent, identifier, sfs);
       parent.children.add(this);
@@ -77,7 +75,8 @@ public class Word extends TwoSided<Word> {
     * @param parent Chapter containing this word
     * @param sfs number of successes and fails for each of the translates
     */
-   private void addTranslates(List<String> translates, Chapter parent, MainChapter identifier, List<int[]> sfs) {
+   private void addTranslates(List<String> translates, Chapter parent,
+           MainChapter identifier, List<int[]> sfs) {
       Set<Integer> found = new HashSet<>();
       if (children.get(parent) == null) {
          children.put(parent, new Word[0]);
@@ -94,7 +93,7 @@ public class Word extends TwoSided<Word> {
                }
                t.parentCount++;
                Word[] chldrn = Arrays.copyOf(t.children.get(parent), 1 + t.children.get(parent).length);
-               chldrn[chldrn.length-1] = this;
+               chldrn[chldrn.length - 1] = this;
                t.children.put(parent, chldrn);
                trls[j] = t;
                found.add(j);
@@ -115,7 +114,8 @@ public class Word extends TwoSided<Word> {
                   }
                }
             }
-            trls[j] = new Word(translates.get(j), this, parent, identifier, (sfs == null ? null : sfs.get(j)));
+            trls[j] = new Word(translates.get(j), this, parent, identifier,
+                    (sfs == null ? null : sfs.get(j)));
          }
       }
       children.put(parent, trls);
@@ -125,7 +125,7 @@ public class Word extends TwoSided<Word> {
    public void destroy(Chapter parent) {
       if (isMain) {
          for (Word t : children.get(parent)) {
-            t.resize(parent, this);
+            t.remove(parent, this);
             t.destroy(parent);
          }
          children.remove(parent);
@@ -140,7 +140,8 @@ public class Word extends TwoSided<Word> {
       }
    }
 
-   private void resize(Chapter parent, Word toRem) {
+   @Override
+   void remove(Chapter parent, Word toRem) {
       Word[] prev = children.get(parent);
       Word[] chdrn = new Word[prev.length - 1];
       for (int i = 0; i < chdrn.length; i++) {
@@ -154,74 +155,26 @@ public class Word extends TwoSided<Word> {
    }
 
    @Override
-   public void removeChild(Word child, Chapter parent) {
-      if (isMain) {
-         child.destroy(parent);
-         resize(parent, child);
-      } else {
-         throw new IllegalArgumentException("Child can be removed only by main Picture");
-      }
+   Word[] mkArray(int size) {
+      return new Word[size];
    }
 
-   @Override
-   public Word[] getChildren() {
-      List<Word> chdrn = new ArrayList<>();
-      children.values().forEach((t) -> chdrn.addAll(Arrays.asList(t)));
-      return chdrn.toArray(new Word[chdrn.size()]);
-   }
-
-   public static void readChildren(String s, String name, Chapter parent, MainChapter identifier, int[] sf, String desc) throws IOException {
-      List<String> translates = new ArrayList<>();
-      List<String> descs = new ArrayList<>();
-      List<int[]> sfs = new LinkedList<>();
-      try {
-         while (dumpSpace(s, '{', ' ', ',', '\n', '\t')) {
-            String info[] = new String[2];
-            int[] tsf = new int[2];
-            String holder;
-            try {
-               while (!(holder = next(s, '"', '"', ' ', ',')).contains("'}'")) {
-                  switch (holder) {
-                     case NAME:
-                        info[0] = next(s, '"', '"', ' ', ':');
-                        break;
-                     case SUCCESS:
-                        tsf[0] = Integer.parseInt(next(s, ' ', ',', ':'));
-                        break;
-                     case FAIL:
-                        tsf[1] = Integer.parseInt(next(s, ' ', ' ', ':'));
-                        break;
-                     case DESC:
-                        info[1] = next(s, '"', '"', ':', ' ');
-                        break;
-                     default:
-                        throw new IllegalArgumentException("Unknown field while getting value for " + holder + ", char num: " + START);
-                  }
-               }
-            } catch (IllegalArgumentException iae) {
-               if (!iae.getMessage().contains("'}'")) {
-                  throw iae;
-               }
-            }
-            translates.add(info[0]);
-            descs.add(info[1]);
-            sfs.add(tsf);
-         }
-      } catch (IllegalArgumentException iae) {
-         if (!iae.getMessage().contains("']'")) {
-            throw iae;
-         }
-      }
-      mkElement(name, translates, parent, identifier, sfs, sf).description = desc;
-      for (int i = translates.size() - 1; i >= 0; i--) {
+   public static void readChildren(String s, String name, Chapter parent,
+           MainChapter identifier, int[] sf, String desc) {
+      List[] info = TwoSided.readChildren(s);
+      List<String> trls = new ArrayList<>();
+      List<String> descs = info[1];
+      List<int[]> sfs = info[2];
+      mkElement(name, trls, parent, identifier, sfs, sf).description = desc;
+      for (int i = trls.size() - 1; i >= 0; i--) {
          if (descs.get(i) == null) {
-            translates.remove(i);
+            trls.remove(i);
             descs.remove(i);
          }
       }
       TRANSLATES.get(identifier).forEach((t) -> {
-         for (int i = translates.size() - 1; i >= 0; i--) {
-            if (translates.get(i).equals(t.toString())) {
+         for (int i = trls.size() - 1; i >= 0; i--) {
+            if (trls.get(i).equals(t.toString())) {
                t.description = descs.get(i);
             }
          }

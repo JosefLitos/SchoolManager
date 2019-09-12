@@ -7,10 +7,8 @@ package objects;
 
 import IOSystem.Formater;
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import IOSystem.Formater.WriteChildren;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -19,7 +17,7 @@ import java.util.Map;
  *
  * @author Josef Litoš
  */
-public abstract class Element implements WriteChildren {
+public abstract class Element extends IOSystem.WriteChildren {
 
    /**
     * This variable contains every instance of the class it is inside sorted
@@ -88,7 +86,7 @@ public abstract class Element implements WriteChildren {
       return name;
    }
 
-   public static void main(String[] args) throws IOException, InterruptedException {
+   public static void main(String[] args) {
       Formater.loadSettings();
       //Formater.changeDir(new File(""));
       List<Element> e = new ArrayList<>();
@@ -103,7 +101,7 @@ public abstract class Element implements WriteChildren {
               (Chapter) e.get(2), (MainChapter) e.get(0), null, new int[]{1, 5}).children.get((Chapter) e.get(2))[1].description = "test2";
       e.add(Picture.mkElement("broskvoň", Arrays.asList(new File("D:\\asdf.jpg"),
               new File("D:\\_vyr_1013boskvon-Catherina.jpg")),
-              (Chapter) e.get(2), (MainChapter) e.get(0), null, new int[]{7,4}, true));
+              (Chapter) e.get(2), (MainChapter) e.get(0), null, new int[]{7, 4}, true));
       e.add(SaveChapter.mkElement("6.8.", (MainChapter) e.get(0), new int[]{4, 5}));
       Picture.mkElement("broskvoň", Arrays.asList(new File("D:\\Poznávačka\\k poznání\\broskvoň 1.jpg"),
               new File("D:\\Poznávačka\\k poznání\\broskvoň 2.jpg"),
@@ -113,10 +111,10 @@ public abstract class Element implements WriteChildren {
       Reference.mkElement(e.get(3), (MainChapter) e.get(0), SaveChapter.mkElement("reftest", (MainChapter) e.get(0), null), "8.5.");
       ((Picture) e.get(3)).removeChild(((Picture) e.get(3)).children.get((Chapter) e.get(2))[1], (Chapter) e.get(2));
       //((SaveChapter)e.get(1)).destroy(null);
-      Formater.saveAll((MainChapter) e.get(0));
+      IOSystem.WriteChildren.saveAll((MainChapter) e.get(0));
    }
 
-   public static void readChildren(String s, String name, Chapter parent, MainChapter identifier, int[] sf, String desc) throws IOException {
+   public static void readChildren(String s, String name, Chapter parent, MainChapter identifier, int[] sf, String desc) {
       throw new UnsupportedOperationException("Can be called only in non-abstract objects");
    }
 }

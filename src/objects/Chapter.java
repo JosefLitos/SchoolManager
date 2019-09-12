@@ -7,8 +7,6 @@ package objects;
 
 import static IOSystem.Formater.ReadChildren.dumpSpace;
 import static IOSystem.Formater.ReadChildren.read;
-import static IOSystem.Formater.WriteChildren.write;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -64,7 +62,8 @@ public class Chapter extends Element {
    }
 
    @Override
-   public StringBuilder writeChildren(StringBuilder sb, int tabs, Element currentParent) {
+   public StringBuilder write(int tabs, Element currentParent) {
+      tabs(tabs++, "{ ").add(this, true, true, true, true, true);
       boolean first = true;
       for (Element e : children) {
          if (first) {
@@ -72,12 +71,12 @@ public class Chapter extends Element {
          } else {
             sb.append(',');
          }
-         write(sb, tabs, e, this);
+         e.write(tabs, this);
       }
-      return sb;
+      return sb.append(" ] }");
    }
 
-   public static void readChildren(String s, String name, Chapter parent, MainChapter identifier, int[] sf, String desc) throws IOException {
+   public static void readChildren(String s, String name, Chapter parent, MainChapter identifier, int[] sf, String desc) {
       Chapter ch = new Chapter(name, parent, identifier, sf);
       ch.description = desc;
       try {

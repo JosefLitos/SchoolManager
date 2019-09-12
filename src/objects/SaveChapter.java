@@ -8,7 +8,6 @@ package objects;
 import static IOSystem.Formater.ReadChildren.dumpSpace;
 import static IOSystem.Formater.ReadChildren.read;
 import java.io.File;
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -67,7 +66,7 @@ public class SaveChapter extends Chapter {
       new File(save).delete();
    }
 
-   public static void readChildren(String s, String name, Chapter parent, MainChapter identifier, int[] sf, String desc) throws IOException {
+   public static void readChildren(String s, String name, Chapter parent, MainChapter identifier, int[] sf, String desc) {
       SaveChapter ch = mkElement(name, identifier, sf);
       ch.description = desc;
       try {
