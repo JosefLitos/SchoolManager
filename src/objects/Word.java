@@ -1,5 +1,7 @@
 package objects;
 
+import IOSystem.Formater.BasicData;
+import static IOSystem.ReadElement.get;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -14,56 +16,57 @@ import java.util.Set;
  */
 public class Word extends TwoSided<Word> {
 
+   /**
+    * @see Element#ELEMENTS
+    */
    public static final Map<MainChapter, List<Word>> TRANSLATES = new HashMap<>();
+   /**
+    * @see Element#ELEMENTS
+    */
    public static final Map<MainChapter, List<Word>> ELEMENTS = new HashMap<>();
 
    /**
     * The only allowed way to create Word objects. Automaticaly controls its
     * existence and returns the proper Word.
     *
-    * @param name name of the currently being created word
     * @param translates translates for this object from one badge
     * @param parent the Chapter which this Word belongs to
-    * @param identifier the file containing this word
-    * @param sfs the successes and fails for every translate
-    * @param wSF the number of successes and fails for this word
     * @return nes
     * {@linkplain #Word(java.lang.String, objects.Chapter, objects.MainChapter, int, int) Word object}
     * if the word doesn't exist yet, otherwise returns the word object with the
     * same name and adds the new translations.
     */
-   public static final Word mkElement(String name, List<String> translates,
-           Chapter parent, MainChapter identifier, List<int[]> sfs, int[] wSF) {
-      if (ELEMENTS.get(identifier) == null) {
-         ELEMENTS.put(identifier, new ArrayList<>());
-         TRANSLATES.put(identifier, new ArrayList<>());
+   public static final Word mkElement(BasicData bd, List<BasicData> translates,
+           Chapter parent) {
+      if (ELEMENTS.get(bd.identifier) == null) {
+         ELEMENTS.put(bd.identifier, new ArrayList<>());
+         TRANSLATES.put(bd.identifier, new ArrayList<>());
       }
-      for (Word w : ELEMENTS.get(identifier)) {
-         if (name.equals(w.toString())) {
+      for (Word w : ELEMENTS.get(bd.identifier)) {
+         if (bd.name.equals(w.toString())) {
             w.parentCount++;
-            w.addTranslates(translates, parent, identifier, sfs);
+            w.addTranslates(translates, parent);
             parent.children.add(w);
             return w;
          }
       }
-      return new Word(name, translates, parent, identifier, sfs, wSF);
+      return new Word(bd, translates, parent);
    }
 
    /**
     * This constructor is used only to create translates.
     */
-   private Word(String name, Word word, Chapter parent, MainChapter identifier, int[] sf) {
-      super(name, identifier, sf, false, TRANSLATES);
+   private Word(BasicData bd, Word word, Chapter parent) {
+      super(bd, false, TRANSLATES);
       children.put(parent, new Word[]{word});
    }
 
    /**
     * This constructor is used only to create Words.
     */
-   private Word(String name, List<String> translates, Chapter parent,
-           MainChapter identifier, List<int[]> sfs, int[] tSF) {
-      super(name, identifier, tSF, true, ELEMENTS);
-      addTranslates(translates, parent, identifier, sfs);
+   private Word(BasicData bd, List<BasicData> translates, Chapter parent) {
+      super(bd, true, ELEMENTS);
+      addTranslates(translates, parent);
       parent.children.add(this);
    }
 
@@ -75,8 +78,7 @@ public class Word extends TwoSided<Word> {
     * @param parent Chapter containing this word
     * @param sfs number of successes and fails for each of the translates
     */
-   private void addTranslates(List<String> translates, Chapter parent,
-           MainChapter identifier, List<int[]> sfs) {
+   private void addTranslates(List<BasicData> translates, Chapter parent) {
       Set<Integer> found = new HashSet<>();
       if (children.get(parent) == null) {
          children.put(parent, new Word[0]);
@@ -114,8 +116,7 @@ public class Word extends TwoSided<Word> {
                   }
                }
             }
-            trls[j] = new Word(translates.get(j), this, parent, identifier,
-                    (sfs == null ? null : sfs.get(j)));
+            trls[j] = new Word(translates.get(j), this, parent);
          }
       }
       children.put(parent, trls);
@@ -159,25 +160,9 @@ public class Word extends TwoSided<Word> {
       return new Word[size];
    }
 
-   public static void readChildren(String s, String name, Chapter parent,
-           MainChapter identifier, int[] sf, String desc) {
-      List[] info = TwoSided.readChildren(s);
-      List<String> trls = new ArrayList<>();
-      List<String> descs = info[1];
-      List<int[]> sfs = info[2];
-      mkElement(name, trls, parent, identifier, sfs, sf).description = desc;
-      for (int i = trls.size() - 1; i >= 0; i--) {
-         if (descs.get(i) == null) {
-            trls.remove(i);
-            descs.remove(i);
-         }
-      }
-      TRANSLATES.get(identifier).forEach((t) -> {
-         for (int i = trls.size() - 1; i >= 0; i--) {
-            if (trls.get(i).equals(t.toString())) {
-               t.description = descs.get(i);
-            }
-         }
-      });
+   public static void readElement(IOSystem.ReadElement.Source src, Chapter parent) {
+      BasicData data = get(src, true, parent.identifier, true, true, true);
+      List<BasicData> children = IOSystem.ReadElement.readChildren(src, true, data.identifier, true, true);
+      mkElement(data, children, parent);
    }
 }

@@ -5,7 +5,9 @@
  */
 package objects;
 
-import static IOSystem.Formater.*;
+import IOSystem.Formater.BasicData;
+import static IOSystem.Formater.getData;
+import static IOSystem.ReadElement.get;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -24,33 +26,34 @@ import java.util.Map;
  */
 public class Picture extends TwoSided<Picture> {
 
+   /**
+    * @see Element#ELEMENTS
+    */
    public static final Map<MainChapter, List<Picture>> IMAGES = new HashMap<>();
+   /**
+    * @see Element#ELEMENTS
+    */
    public static final Map<MainChapter, List<Picture>> ELEMENTS = new HashMap<>();
 
    /**
     * The only allowed way to create Picture objects. Automaticaly controls its
     * existence and returns the proper Picture.
     *
-    * @param name name of the currently being created picture
     * @param images the files containing an image each
     * @param parent the Chapter which this Picture belongs to
-    * @param identifier the file containing this word
-    * @param sfs the successes and fails for every image
-    * @param iSF the number of successes and fails for this picture
     * @param isNew if the object to be created is new or just loading hierarchy
     * @return new
     * {@linkplain #Picture(java.lang.String, objects.Chapter, objects.MainChapter, int, int, boolean) Picture object}
     * if the name doesn't exist yet, otherwise returns the picture object with
     * the same name and adds the new images.
     */
-   public static final Picture mkElement(String name, List<File> images, Chapter parent,
-           MainChapter identifier, List<int[]> sfs, int[] iSF, boolean isNew) {
-      if (ELEMENTS.get(identifier) == null) {
-         ELEMENTS.put(identifier, new ArrayList<>());
-         IMAGES.put(identifier, new ArrayList<>());
+   public static final Picture mkElement(BasicData bd, List<BasicData> images, Chapter parent, boolean isNew) {
+      if (ELEMENTS.get(bd.identifier) == null) {
+         ELEMENTS.put(bd.identifier, new ArrayList<>());
+         IMAGES.put(bd.identifier, new ArrayList<>());
       }
-      for (Picture p : ELEMENTS.get(identifier)) {
-         if (name.equals(p.toString())) {
+      for (Picture p : ELEMENTS.get(bd.identifier)) {
+         if (bd.name.equals(p.toString())) {
             condition:
             {
                for (Chapter prnt : p.children.keySet()) {
@@ -59,30 +62,29 @@ public class Picture extends TwoSided<Picture> {
                   }
                }
                if (isNew) {
-                  String search = name + ":parCount:";
-                  identifier.pictures = identifier.pictures.replace(search + p.parentCount,
+                  String search = bd.name + ":parCount:";
+                  bd.identifier.pictures = bd.identifier.pictures.replace(search + p.parentCount,
                           search + ++p.parentCount);
                }
                parent.children.add(p);
             }
-            p.addImages(images, parent, identifier, sfs, isNew);
+            p.addImages(images, parent, isNew);
             return p;
          }
       }
-      return new Picture(name, images, parent, identifier, sfs, iSF, isNew);
+      return new Picture(bd, images, parent, isNew);
    }
 
    /**
     * This constructor is used only to create images.
     */
-   private Picture(Picture pic, Chapter parent, MainChapter identifier, int[] sf,
-           File save, File destination, boolean isNew) {
-      super(destination.getName(), identifier, sf, false, IMAGES);
+   private Picture(Picture pic, Chapter parent, File save, BasicData bd, File dest, boolean isNew) {
+      super(bd, false, IMAGES);
       children.put(parent, new Picture[]{pic});
       picParentCount(isNew);
       if (isNew) {
-         if (!destination.exists()) {
-            try (BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(destination));
+         if (!dest.exists()) {
+            try (BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(dest));
                     BufferedInputStream bis = new BufferedInputStream(new FileInputStream(save))) {
                byte[] buffer = new byte[8192];
                int amount;
@@ -99,11 +101,10 @@ public class Picture extends TwoSided<Picture> {
    /**
     * This constructor is used only to create Pictures.
     */
-   private Picture(String name, List<File> images, Chapter parent, MainChapter identifier,
-           List<int[]> sfs, int[] pSF, boolean isNew) {
-      super(name, identifier, pSF, true, ELEMENTS);
+   private Picture(BasicData bd, List<BasicData> images, Chapter parent, boolean isNew) {
+      super(bd, true, ELEMENTS);
       picParentCount(isNew);
-      addImages(images, parent, identifier, sfs, isNew);
+      addImages(images, parent, isNew);
       parent.children.add(this);
    }
 
@@ -128,8 +129,7 @@ public class Picture extends TwoSided<Picture> {
     * @param parent Chapter containing this picture
     * @param sfs the successes and fails for every image
     */
-   private void addImages(List<File> images, Chapter parent, MainChapter identifier,
-           List<int[]> sfs, boolean isNew) {
+   private void addImages(List<BasicData> images, Chapter parent, boolean isNew) {
       if (children.get(parent) == null) {
          children.put(parent, new Picture[0]);
       }
@@ -139,7 +139,7 @@ public class Picture extends TwoSided<Picture> {
          File pic;
          if (isNew) {
             int serialINum = -1;
-            String[] fix = images.get(i).toString().split("\\.");
+            String[] fix = images.get(i).name.split("\\.");
             fix[1] = '.' + fix[fix.length - 1];
             fix[0] = identifier.dir.getPath() + "\\Pictures\\" + this.name + ' ';
             do {
@@ -147,11 +147,11 @@ public class Picture extends TwoSided<Picture> {
                pic = new File(fix[0] + serialINum + fix[1]);
             } while (pic.exists());
          } else {
-            pic = images.get(i);
+            pic = new File(images.get(i).name);
          }
-         imgs[i + differ] = new Picture(this, parent, identifier,
-                 (sfs == null ? null : sfs.get(i)), images.get(i),
-                 pic, isNew);
+         File source = new File(images.get(i).name);
+         images.get(i).name = pic.getName();
+         imgs[i + differ] = new Picture(this, parent, source, images.get(i), pic, isNew);
       }
       children.put(parent, imgs);
    }
@@ -198,27 +198,9 @@ public class Picture extends TwoSided<Picture> {
       return new Picture[size];
    }
 
-   public static void readChildren(String s, String name, Chapter parent,
-           MainChapter identifier, int[] sf, String desc) {
-      List[] info = TwoSided.readChildren(s);
-      List<File> imgs = new ArrayList<>();
-      info[0].forEach((img) -> imgs.add(new File(img.toString())));
-      List<String> descs = info[1];
-      List<int[]> sfs = info[2];
-      mkElement(name, imgs, parent, identifier, sfs, sf, false).description = desc;
-      for (int i = 0; i < imgs.size(); i++) {
-         if (descs.get(i) == null) {
-            imgs.remove(i);
-            descs.remove(i);
-            i--;
-         }
-      }
-      IMAGES.get(identifier).forEach((img) -> {
-         for (int i = imgs.size() - 1; i >= 0; i--) {
-            if (imgs.get(i).getName().equals(img.toString())) {
-               img.description = descs.get(i);
-            }
-         }
-      });
+   public static void readElement(IOSystem.ReadElement.Source src, Chapter parent) {
+      BasicData data = get(src, true, parent.identifier, true, true, true);
+      List<BasicData> children = IOSystem.ReadElement.readChildren(src, true, data.identifier, true, true);
+      mkElement(data, children, parent, false);
    }
 }

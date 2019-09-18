@@ -5,8 +5,7 @@
  */
 package objects;
 
-import static IOSystem.Formater.ReadChildren.dumpSpace;
-import static IOSystem.Formater.ReadChildren.read;
+import IOSystem.Formater.BasicData;
 import java.io.File;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -14,6 +13,10 @@ import java.util.List;
 import java.util.Map;
 
 /**
+ * Heading chapter belonging to a specified {@link #identifier hierarchy}. Every
+ * instance of this class saves into its own file.
+ *
+ * @see Chapter
  *
  * @author InvisibleManCZ
  */
@@ -21,38 +24,37 @@ public class SaveChapter extends Chapter {
 
    public static final Map<MainChapter, List<SaveChapter>> ELEMENTS = new HashMap<>();
 
-   public boolean loaded = true;
+   public boolean loaded;
    public final String save;
 
-   public static final SaveChapter mkElement(String name, MainChapter identifier, int[] sf) {
-      if (ELEMENTS.get(identifier) == null) {
-         ELEMENTS.put(identifier, new LinkedList<>());
+   public static final SaveChapter mkElement(BasicData bd) {
+      if (ELEMENTS.get(bd.identifier) == null) {
+         ELEMENTS.put(bd.identifier, new LinkedList<>());
       }
-      for (SaveChapter sch : ELEMENTS.get(identifier)) {
-         if (name.equals(sch.toString())) {
+      for (SaveChapter sch : ELEMENTS.get(bd.identifier)) {
+         if (bd.name.equals(sch.toString())) {
             sch.loaded = true;
             return sch;
          }
       }
-      return new SaveChapter(name, identifier, sf);
+      return new SaveChapter(bd);
    }
 
-   private SaveChapter(String name, MainChapter identifier, int[] sf) {
-      super(name, identifier, sf);
+   private SaveChapter(BasicData bd) {
+      super(bd);
+      loaded = true;
       ELEMENTS.get(identifier).add(this);
       identifier.children.add(this);
       save = identifier.dir.getAbsolutePath() + "\\Chapters\\" + name + ".json";
    }
 
    /**
-    * This constructor is only for MainChapter
+    * This constructor can be used only to create {@link MainChapter}.
     *
-    * @param name name of the hierarchy
-    * @param save the save-file path
-    * @param sf the number of successes and fails for this hierarchy
+    * @param save {@link #save}
     */
-   SaveChapter(String name, String save, int[] sf) {
-      super(name, null, sf);
+   SaveChapter(BasicData bd, String save) {
+      super(bd);
       this.save = save;
    }
 
@@ -66,17 +68,23 @@ public class SaveChapter extends Chapter {
       new File(save).delete();
    }
 
-   public static void readChildren(String s, String name, Chapter parent, MainChapter identifier, int[] sf, String desc) {
-      SaveChapter ch = mkElement(name, identifier, sf);
-      ch.description = desc;
-      try {
-         while (dumpSpace(s, '{', ' ', ',', '\n', '\t')) {
-            read(s, ch, identifier);
+   @Override
+   public StringBuilder writeElement(StringBuilder sb, int tabs, Element currentParent) {
+      tabs(sb, tabs++, "{ ").add(sb, this, true, true, false, true, true);
+      boolean first = true;
+      for (Element e : children) {
+         if (first) {
+            first = false;
+         } else {
+            sb.append(',');
          }
-      } catch (IllegalArgumentException iae) {
-         if (!iae.getMessage().contains("']'")) {
-            throw iae;
-         }
+         e.writeElement(sb, tabs, this);
       }
+      return sb.append(" ] }");
+   }
+
+   public static void readElement(IOSystem.ReadElement.Source src, Chapter parent) {
+      IOSystem.ReadElement.loadChildren(src, mkElement(IOSystem.ReadElement.get(
+              src, true, (MainChapter) parent, false, true, true)));
    }
 }

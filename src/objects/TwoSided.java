@@ -5,13 +5,10 @@
  */
 package objects;
 
-import static IOSystem.Formater.*;
-import static IOSystem.Formater.ReadChildren.dumpSpace;
-import static IOSystem.Formater.ReadChildren.next;
+import IOSystem.Formater.BasicData;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -27,8 +24,8 @@ public abstract class TwoSided<T extends TwoSided> extends Element {
    protected final boolean isMain;
    protected int parentCount;
 
-   protected TwoSided(String name, MainChapter identifier, int[] sf, boolean isMain, Map<MainChapter, List<T>> NET) {
-      super(name, identifier, sf);
+   protected TwoSided(BasicData bd, boolean isMain, Map<MainChapter, List<T>> NET) {
+      super(bd);
       this.isMain = isMain;
       NET.get(identifier).add((T) this);
       parentCount = 1;
@@ -55,8 +52,8 @@ public abstract class TwoSided<T extends TwoSided> extends Element {
    abstract void remove(Chapter parent, T child);
 
    @Override
-   public StringBuilder write(int tabs, Element cp) {
-      tabs(tabs++, "{ ").add(this, true, true, true, true, true);
+   public StringBuilder writeElement(StringBuilder sb, int tabs, Element cp) {
+      tabs(sb, tabs++, "{ ").add(sb, this, true, true, true, true, true);
       boolean first = true;
       for (T e : children.get((Chapter) cp)) {
          if (first) {
@@ -64,54 +61,8 @@ public abstract class TwoSided<T extends TwoSided> extends Element {
          } else {
             sb.append(',');
          }
-         tabs(tabs, "{ ").add(e, false, true, true, true, false).append(" }");
+         tabs(sb, tabs, "{ ").add(sb, e, false, true, true, true, false).append(" }");
       }
       return sb.append(" ] }");
-   }
-
-   public static List[] readChildren(String s) {
-      List<String> translates = new ArrayList<>();
-      List<String> descs = new ArrayList<>();
-      List<int[]> sfs = new LinkedList<>();
-      try {
-         while (dumpSpace(s, '{', ' ', ',', '\n', '\t')) {
-            String info[] = new String[2];
-            int[] esf = new int[2];
-            String holder;
-            try {
-               while (!(holder = next(s, '"', '"', ' ', ',')).contains("'}'")) {
-                  switch (holder) {
-                     case NAME:
-                        info[0] = next(s, '"', '"', ' ', ':');
-                        break;
-                     case SUCCESS:
-                        esf[0] = Integer.parseInt(next(s, ' ', ',', ':'));
-                        break;
-                     case FAIL:
-                        esf[1] = Integer.parseInt(next(s, ' ', ' ', ':'));
-                        break;
-                     case DESC:
-                        info[1] = next(s, '"', '"', ':', ' ');
-                        break;
-                     default:
-                        throw new IllegalArgumentException("Unknown field while getting value for "
-                                + holder + ", char num: " + START);
-                  }
-               }
-            } catch (IllegalArgumentException iae) {
-               if (!iae.getMessage().contains("'}'")) {
-                  throw iae;
-               }
-            }
-            translates.add(info[0]);
-            descs.add(info[1]);
-            sfs.add(esf);
-         }
-      } catch (IllegalArgumentException iae) {
-         if (!iae.getMessage().contains("']'")) {
-            throw iae;
-         }
-      }
-      return new List[]{translates, descs, sfs};
    }
 }

@@ -6,32 +6,43 @@
 package objects;
 
 import IOSystem.Formater;
-import java.io.File;
-import java.util.ArrayList;
+import IOSystem.Formater.BasicData;
 import java.util.List;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
 /**
+ * Basic element of the school object project element hierarchy. Defines the
+ * basic data for every of its instances.
  *
+ * @see MainChapter
  * @author Josef Litoš
  */
-public abstract class Element extends IOSystem.WriteChildren {
+public abstract class Element extends IOSystem.WriteElement {
 
    /**
-    * This variable contains every instance of the class it is inside sorted
-    * under MainChapters as their identifiers.
+    * This map contains every instance of this class divided under MainChapters
+    * as their identifiers.
     */
    public static final Map<MainChapter, List<Element>> ELEMENTS = new HashMap<>();
 
    /**
-    * Success and Fail
+    * Name of this object.
     */
-   protected int[] sf = {0, 0};
-   public final MainChapter identifier;
    public String name;
-   public String description = "";
+   /**
+    * The head hierarchy object which this object belongs to.
+    */
+   public final MainChapter identifier;
+   /**
+    * Success and Fail for this object
+    */
+   protected int[] sf;
+   /**
+    * The description for this object.
+    */
+   public String description;
 
    public int getSuccess() {
       return sf[0];
@@ -41,12 +52,17 @@ public abstract class Element extends IOSystem.WriteChildren {
       return sf[1];
    }
 
-   protected Element(String name, MainChapter identifier, int[] sucfail) {
-      this.name = name;
-      this.identifier = identifier;
-      if (sucfail != null) {
-         sf = sucfail;
+   protected Element(IOSystem.Formater.BasicData bd) {
+      name = bd.name;
+      identifier = bd.identifier;
+      if (bd.sf == null) {
+         sf = new int[]{0, 0};
+      } else if (bd.sf[0] >= 0 || bd.sf[1] >= 0) {
+         sf = bd.sf;
+      } else {
+         throw new IllegalArgumentException("Values of variable sf can't be less than 0!\nGot " + sf[0] + ", " + sf[1]);
       }
+      description = (bd.description == null ? "" : bd.description);
    }
 
    /**
@@ -87,34 +103,29 @@ public abstract class Element extends IOSystem.WriteChildren {
    }
 
    public static void main(String[] args) {
+      char D = 'D';
       Formater.loadSettings();
       //Formater.changeDir(new File(""));
-      List<Element> e = new ArrayList<>();
-      e.add(new MainChapter("test", new int[]{2, 3}));
-      e.add(SaveChapter.mkElement("8.5.", (MainChapter) e.get(0), new int[]{4, 5}));
-      e.add(new Chapter("Society", (Chapter) e.get(1), (MainChapter) e.get(0), new int[]{6, 7}));
-      Word.mkElement("hard", Arrays.asList("těžk\\ý\\á\\é", "těžce"),
-              (Chapter) e.get(1), (MainChapter) e.get(0), null, null);
-      Word.mkElement("hardly", Arrays.asList("sotva", "stěží"),
-              (Chapter) e.get(1), (MainChapter) e.get(0), null, null);
-      Word.mkElement("hard", Arrays.asList("tvrd/ý/á/é/ě", "náročn\"/ý/á/é/ě"),
-              (Chapter) e.get(2), (MainChapter) e.get(0), null, new int[]{1, 5}).children.get((Chapter) e.get(2))[1].description = "test2";
-      e.add(Picture.mkElement("broskvoň", Arrays.asList(new File("D:\\asdf.jpg"),
-              new File("D:\\_vyr_1013boskvon-Catherina.jpg")),
-              (Chapter) e.get(2), (MainChapter) e.get(0), null, new int[]{7, 4}, true));
-      e.add(SaveChapter.mkElement("6.8.", (MainChapter) e.get(0), new int[]{4, 5}));
-      Picture.mkElement("broskvoň", Arrays.asList(new File("D:\\Poznávačka\\k poznání\\broskvoň 1.jpg"),
-              new File("D:\\Poznávačka\\k poznání\\broskvoň 2.jpg"),
-              new File("D:\\Poznávačka\\k poznání\\broskvoň 3.jpg")),
-              (Chapter) e.get(1), (MainChapter) e.get(0), null, new int[]{1, 5}, true).description = "biologie";
-      ((Picture) e.get(3)).children.get((Chapter) e.get(2))[1].description = "test";
-      Reference.mkElement(e.get(3), (MainChapter) e.get(0), SaveChapter.mkElement("reftest", (MainChapter) e.get(0), null), "8.5.");
-      ((Picture) e.get(3)).removeChild(((Picture) e.get(3)).children.get((Chapter) e.get(2))[1], (Chapter) e.get(2));
+      String imgs = D + ":\\Poznávačka\\k poznání\\";
+      MainChapter mch = new MainChapter(new BasicData("newIOSystem", null, 2, 3, "new way of saving and loading hierarchies"));
+      SaveChapter sch1 = SaveChapter.mkElement(new BasicData("8.5.", mch));
+      Chapter ch1 = new Chapter(new BasicData("Society", mch, 6, 7), sch1);
+      Word.mkElement(new BasicData("hard", mch), Arrays.asList(new BasicData("těžk\\ý\\á\\é", mch, 1, 5), new BasicData("těžce", mch, "Desciption test")), sch1);
+      Word.mkElement(new BasicData("hardly", mch), Arrays.asList(new BasicData("sotva", mch), new BasicData("stěží", mch)), sch1);
+      Word.mkElement(new BasicData("hard", mch), Arrays.asList(new BasicData("tvrd/ý/á/é/ě", mch), new BasicData("náročn\"/ý/á/é/ě", mch)), ch1);
+      Picture pic = Picture.mkElement(new BasicData("broskvoň", mch, "biologie"), Arrays.asList(new BasicData(D + ":\\asdf.jpg", mch),
+              new BasicData(D + ":\\_vyr_1013boskvon-Catherina.jpg", mch)), ch1, true);
+      //SaveChapter sch2 = SaveChapter.mkElement(new BasicData("6.8.", mch, 4, 5));
+      Reference.mkElement(sch1, new Chapter(new BasicData("refSChTest", mch), ch1), null);
+      Reference.mkElement(pic, SaveChapter.mkElement(new BasicData("reftest", mch, 20, 3)), "8.5.");
+      Picture.mkElement(new BasicData("broskvoň", mch), Arrays.asList(new BasicData(imgs + "broskvoň 1.jpg", mch),
+              new BasicData(imgs + "broskvoň 2.jpg", mch), new BasicData(imgs + "broskvoň 3.jpg", mch)), sch1, true);
+      pic.removeChild(pic.children.get(ch1)[1], ch1);
       //((SaveChapter)e.get(1)).destroy(null);
-      IOSystem.WriteChildren.saveAll((MainChapter) e.get(0));
+      IOSystem.WriteElement.saveAll(mch);
    }
 
-   public static void readChildren(String s, String name, Chapter parent, MainChapter identifier, int[] sf, String desc) {
+   public static void readElement(IOSystem.ReadElement.Source src, Chapter parent) {
       throw new UnsupportedOperationException("Can be called only in non-abstract objects");
    }
 }
