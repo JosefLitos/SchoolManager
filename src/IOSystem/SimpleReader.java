@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package IOSystem;
 
 import static IOSystem.Formatter.Data;
@@ -129,6 +124,13 @@ public class SimpleReader {
       return loadWords(parent, prevPar, getContent(source), startIndex, endIndex, wordCount, b);
    }
 
+   /**
+    * Creates hierarchy of words and chapters. Used for converting simple text
+    * to programs database.
+    *
+    * @param source where to get the content from
+    * @return the created simple hierarchy
+    */
    private static SimpleChapter[] getContent(File source) {
       return new SimpleChapter(null, new Lines(0, Formatter.loadFile(source).split("\n"))).chaps;
    }
@@ -146,6 +148,9 @@ public class SimpleReader {
       }
    }
 
+   /**
+    * Stores chapters and word-lines. Part of the simple hierarchy loading.
+    */
    private static class SimpleChapter {
 
       SimpleChapter[] chaps;
@@ -181,6 +186,9 @@ public class SimpleReader {
       }
    }
 
+   /**
+    * Contains words on one line sorted by their position.
+    */
    private static class SimpleLine {
 
       String[][] words;
@@ -210,23 +218,6 @@ public class SimpleReader {
          }
          array.add(src.substring(i));
          return array.toArray(new String[0]);
-      }
-   }
-
-   public static void main(String[] args) {
-      Formatter.loadSettings();
-//      File f = new File(Formatter.objDir + "AJ");
-      MainChapter mch
-              = //              f.exists() ? ReadElement.loadAll(f) : 
-              new MainChapter(new Data("NJ", null));
-      try {
-//         System.out.println(Arrays.toString(sortLoad(new File(new File("")
-//                 .getAbsolutePath().charAt(0) + ":\\skola\\NJ.txt"), mch, null, 0, -1, 95, 1, new String[]{"", ". 100"}, true)));
-         System.out.println(Arrays.toString(simpleLoad(new File(new File("")
-                 .getAbsolutePath().charAt(0) + ":\\skola\\NJ.txt"), mch, null, 0, -1, -1, true)));
-         mch.save(null);
-      } finally {
-//         mch.destroy(null);
       }
    }
 }

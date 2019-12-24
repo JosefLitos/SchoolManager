@@ -1,42 +1,43 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package objects;
 
 import IOSystem.Formatter.Data;
+import static IOSystem.WriteElement.obj;
+import static IOSystem.WriteElement.str;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import objects.templates.BasicData;
-import objects.templates.Element;
 import objects.templates.Container;
 import objects.templates.ContainerFile;
 
 /**
- * References to another {@link Element} instance other than {@link MainChapter}
- * and its extensions.
+ * References to another {@link BasicData} instance other than
+ * {@link MainChapter} and its extensions.
  *
  * @author Josef Litoš
  */
 public final class Reference implements BasicData {
 
    /**
-    * read-only data
+    * Contains all instances of this class created. All References are sorted by
+    * the {@link MainChapter hierarchy} they belong to. read-only data
     */
    public static final Map<MainChapter, List<Reference>> ELEMENTS = new java.util.HashMap<>();
    /**
-    * the original {@link objects.templates.ContainerFile} of the referenced
-    * object
+    * Full path to the {@link #reference referenced object}.
     */
    protected final Container[] path;
 
    public Container[] getRefPath() {
       return path.clone();
    }
-
+   /**
+    * The referenced object.
+    */
    public final BasicData reference;
+   /**
+    * The number of times this object is being stored in any {@link Container}.
+    */
    int parentCount;
 
    /**
@@ -91,10 +92,8 @@ public final class Reference implements BasicData {
 
    @Override
    public StringBuilder writeData(StringBuilder sb, int tabs, Container cp) {
-      tabs(sb, tabs, "{ ").add(sb, this, cp, true, true, false, false, false)
-              .append(", \"refCls\": \"").append(reference.getClass().getName())
-              .append("\", \"origin\": \"").append(mkSafe(mkPath()));
-      return sb.append("\" }");
+      tabs(sb, tabs, '{').add(sb, this, cp, true, true, false, false, str("refCls", "origin"), obj(reference.getClass().getName(), mkPath()), false);
+      return sb.append('}');
    }
 
    private String mkPath() {
@@ -103,14 +102,6 @@ public final class Reference implements BasicData {
          ret += "¤" + c;
       }
       return ret.substring(1);
-   }
-
-   public static void readData(IOSystem.ReadElement.Source src, Container parent) {
-      Data data = IOSystem.ReadElement.get(src, true, false, false, false, parent, "refCls", "origin");
-      Container[] org = new Container[data.tagVals[1].split(".").length];
-      org[0] = src.i;
-      BasicData ref = usePath(data.tagVals[1].split("¤"), org, 0);
-      mkElement(ref, Arrays.asList(new Container[]{parent.getIdentifier(), parent}), org);
    }
 
    private static BasicData usePath(String[] path, Container[] pathRes, int index) {
@@ -124,7 +115,7 @@ public final class Reference implements BasicData {
 
    private static BasicData find(String name, Container par, Container parpar) {
       if (par instanceof ContainerFile) {
-         ((ContainerFile) par).load(parpar);
+         ((ContainerFile) par).load();
       }
       for (BasicData bd : par.getChildren(parpar)) {
          if (name.equals(bd.getName())) {
@@ -160,6 +151,11 @@ public final class Reference implements BasicData {
    }
 
    @Override
+   public void addSF(boolean success) {
+      reference.addSF(success);
+   }
+
+   @Override
    public String getDesc(Container c) {
       return reference.getDesc(path[path.length - 1]);
    }
@@ -172,5 +168,17 @@ public final class Reference implements BasicData {
    @Override
    public String toString() {
       return getName();
+   }
+
+   /**
+    * Implementation of
+    * {@link IOSystem.ReadElement#readData(IOSystem.ReadElement.Source, objects.templates.Container) loading from String}.
+    */
+   public static void readData(IOSystem.ReadElement.Source src, Container parent) {
+      Data data = IOSystem.ReadElement.get(src, true, false, false, false, parent, "refCls", "origin");
+      Container[] org = new Container[((String) data.tagVals[1]).split(".").length];
+      org[0] = src.i;
+      BasicData ref = usePath(((String) data.tagVals[1]).split("¤"), org, 0);
+      mkElement(ref, Arrays.asList(new Container[]{parent.getIdentifier(), parent}), org);
    }
 }

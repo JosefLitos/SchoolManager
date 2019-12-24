@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package objects;
 
 import IOSystem.Formatter.Data;
@@ -11,17 +6,20 @@ import objects.templates.BasicData;
 import objects.templates.Container;
 
 /**
- * Instances of this class can contain any other hierarchy objects.
+ * Stores other {@link BasicData hierarchy objects}.
  *
  * @author Josef Litoš
  */
 public class Chapter extends objects.templates.SemiElementContainer {
 
    /**
-    * read-only data
+    * Contains all instances of this class created. All Chapters are sorted by
+    * the {@link MainChapter hierarchy} they belong to. read-only data
     */
    public static final java.util.Map<MainChapter, List<Chapter>> ELEMENTS = new java.util.HashMap<>();
-
+   /**
+    * Parent of this object.
+    */
    protected Container parent;
 
    @Override
@@ -63,10 +61,14 @@ public class Chapter extends objects.templates.SemiElementContainer {
 
    @Override
    public StringBuilder writeData(StringBuilder sb, int tabs, Container cp) {
-      tabs(sb, tabs++, "{ ").add(sb, this, cp, true, true, true, true, true);
+      tabs(sb, tabs++, '{').add(sb, this, cp, true, true, true, true, null, null, true);
       return writeData0(sb, tabs, cp);
    }
 
+   /**
+    * Implementation of
+    * {@link IOSystem.ReadElement#readData(IOSystem.ReadElement.Source, objects.templates.Container) loading from String}.
+    */
    public static BasicData readData(IOSystem.ReadElement.Source src, Container parent) {
       Chapter ch = new Chapter(IOSystem.ReadElement.get(src, true, true, true, true, parent));
       IOSystem.ReadElement.loadChildren(src, ch).forEach((e) -> ch.putChild(parent, e));

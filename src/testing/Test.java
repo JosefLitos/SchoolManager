@@ -1,15 +1,14 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package testing;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
-import objects.TwoSided;
+import objects.MainChapter;
+import objects.templates.TwoSided;
+import objects.templates.BasicData;
+import objects.templates.Container;
 
 /**
  * Creates and manages a test for any {@link TwoSided} object. Resets all values
@@ -21,14 +20,69 @@ import objects.TwoSided;
 public class Test<T extends TwoSided> {
 
    /**
+    * The generic type of this object.
+    */
+   final Class<T> t;
+
+   public Test(Class<T> t) {
+      this.t = t;
+   }
+
+   /**
+    * Converts the given list of paths to list of SourcePaths.
+    *
+    * @param path the list of paths to be converted
+    * @return the converted {@code paths}
+    */
+   public List<SrcPath<T>> mkSrcPath(List<List<Container>> path) {
+      List<SrcPath<T>> p = new LinkedList<>();
+      path.forEach((t) -> p.add(new SrcPath<>(t)));
+      return p;
+   }
+
+   /**
+    *
+    * @param path the path to the object which content will be processed and
+    * returned
+    * @return the list of paths to every element of class {@link #t T} contained
+    * in the last object of the param {@code path}
+    */
+   public List<SrcPath<T>> getContent(List<Container> path) {
+      if (t.isInstance(path.get(path.size() - 1))) {
+         throw new IllegalArgumentException("Only normal Containers can be read, the TwoSided is the result!");
+      }
+      return getC0(path);
+   }
+
+   private List<SrcPath<T>> getC0(List<Container> path) {
+      List<SrcPath<T>> list = new LinkedList<>();
+      for (BasicData bd : path.get(path.size() - 1).getChildren(path.get(path.size() - 2))) {
+         if (bd instanceof Container) {
+            if (bd instanceof TwoSided) {
+               if (t.isInstance(bd)) {
+                  List<Container> x = new LinkedList<>(path);
+                  x.add((Container) bd);
+                  list.add(new SrcPath<>(x));
+               }
+            } else {
+               List<Container> x = new LinkedList<>(path);
+               x.add((Container) bd);
+               list.addAll(getC0(x));
+            }
+         }
+      }
+      return list;
+   }
+
+   /**
     * Default duration of a test in seconds.
     */
-   private static int DEFAULT_TIME;
+   private static int DEFAULT_TIME = -1;
 
    public static int getDefaultTime() {
       if (DEFAULT_TIME <= 0) {
          try {
-            return Integer.parseInt(IOSystem.Formatter.getSetting("defaultTestTime"));
+            return DEFAULT_TIME = Integer.parseInt(IOSystem.Formatter.getSetting("defaultTestTime"));
          } catch (NumberFormatException | NullPointerException e) {
             setDefaultTime(180);
             return 180;
@@ -46,17 +100,23 @@ public class Test<T extends TwoSided> {
    /**
     * {@code true} - clever choosing when creating a test
     */
-   private static boolean CLEVER_RND = true;
+   private static boolean CLEVER_RND;
 
+   /**
+    *
+    * @return whether the created tests will prefer less tested and worse result
+    * object, when selecting the content of a test.
+    */
    public static boolean isClever() {
-      return CLEVER_RND;
+      return CLEVER_RND ? CLEVER_RND : (CLEVER_RND = IOSystem.Formatter.getSetting("randomType").contains("t"));
    }
 
    public static void setClever(boolean isClever) {
       IOSystem.Formatter.putSetting("randomType", "" + (CLEVER_RND = isClever));
    }
 
-   private List<T> source;
+   private List<SrcPath<T>> source;
+   private MainChapter mch;
    private boolean[] answered;
    private int time;
    private Timer doOnSec;
@@ -69,9 +129,10 @@ public class Test<T extends TwoSided> {
     * @param doOnSec action to be done every second of the test, last call on
     * time out
     * @param timeSec duration of a test
-    * @param source the array of objects for the test
+    * @param source List of paths to the tested objects. Don't include
+    * MainChapter.
     */
-   public void setTested(int amount, Timer doOnSec, int timeSec, List<T> source) {
+   public void setTested(int amount, Timer doOnSec, int timeSec, List<SrcPath<T>> source) {
       if (amount == -1) {
          amount = source.size();
       } else if (amount < 1 || amount > source.size()) {
@@ -81,51 +142,87 @@ public class Test<T extends TwoSided> {
       } else if (source.size() < 2) {
          throw new IllegalArgumentException("The source must contain more than one element");
       }
-      this.source = CLEVER_RND ? cleverTest(source, amount) : rndTest(source, amount);
+      mch = source.get(0).t.getIdentifier();
+      this.source = isClever() ? cleverTest(source, amount) : rndTest(source, amount);
       time = timeSec;
       this.doOnSec = doOnSec;
-      answered = new boolean[source.size()];
+      answered = new boolean[this.source.size()];
    }
 
-   private List<T> rndTest(List<T> source, int amount) {
-      Random rd = new Random(System.nanoTime());
-      int pos = rd.nextInt(source.size());
-      T current = source.get(pos);
-      for (int i = 0; i < source.size(); i++) {
-         current = source.set(pos, current);
+   public static class SrcPath<T extends TwoSided> {
+
+      final List<Container> srcPath;
+      final T t;
+
+      SrcPath(List<Container> srcPath) {
+         this.srcPath = srcPath;
+         t = (T) srcPath.get(srcPath.size() - 1);
       }
-      for (int i = source.size(); i > amount; i--) {
+
+      int sfc() {
+         return t.getSFCount();
+      }
+
+      int rat() {
+         return t.getRatio();
+      }
+
+      @Override
+      public String toString() {
+         return sfc() + "  " + rat() + "  " + t.getName();
+      }
+
+      TwoSided[] getChildren() {
+         return t.getChildren(srcPath.get(srcPath.size() - 2));
+      }
+   }
+
+   private List<SrcPath<T>> rndTest(List<SrcPath<T>> source, int amount) {
+      for (int i = source.size() - 1; i > amount; i--) {
          source.remove(i);
       }
+      Random rd = new Random(System.nanoTime());
+      int pos = rd.nextInt(source.size());
+      SrcPath current = source.get(pos);
+      for (int i = 0; i < source.size(); i++) {
+         current = source.set(rd.nextInt(source.size()), current);
+      }
+      source.set(pos, current);
       return source;
    }
 
-   private List<T> cleverTest(List<T> source, int amount) {
-      ToSort<T> num = (t) -> t.getSF()[0] + t.getSF()[1];
-      float i = -1;
-      LinkedList<LinkedList<T>> tested = new LinkedList<>();
-      LinkedList<T> part = null;
-      for (T t : MergeSort.sort(true, source, num)) {
-         if (num.getNum(t) == i) {
-            part.add(t);
+   private List<SrcPath<T>> cleverTest(List<SrcPath<T>> source, int amount) {
+      int i = -1;
+      LinkedList<Object[]> tested = new LinkedList<>();
+      List<Object> part = new LinkedList<>();
+      Object[] toSort = source.toArray();
+      Arrays.sort(toSort, (a, b)
+              -> ((SrcPath<T>) a).sfc() == ((SrcPath<T>) b).sfc() ? 0
+              : (((SrcPath<T>) a).sfc() < ((SrcPath<T>) b).sfc() ? -1 : 1));
+      for (Object path : toSort) {
+         if (((SrcPath<T>) path).sfc() == i) {
+            part.add(path);
          } else {
-            tested.add(part);
-            i = num.getNum(t);
+            tested.add(part.toArray());
+            i = ((SrcPath<T>) path).sfc();
             part = new LinkedList<>();
-            part.add(t);
+            part.add(path);
          }
       }
-      source.clear();
-      for (LinkedList<T> x : tested) {
-         if (source.size() + x.size() < amount) {
-            source.addAll(x);
+      tested.add(part.toArray());
+      tested.remove(0);
+      source = new ArrayList<>();
+      for (Object[] x : tested) {
+         if (source.size() + x.length < amount) {
+            for (Object o : Arrays.asList(x)) {
+               source.add((SrcPath<T>) o);
+            }
          } else {
-            for (T t : MergeSort.sort(true, source, (t) -> t.getRatio())) {
-               if (source.size() + 1 < amount) {
-                  source.add(t);
-               } else {
-                  break;
-               }
+            Arrays.sort(x, (a, b)
+                    -> ((SrcPath<T>) a).rat() == ((SrcPath<T>) b).rat() ? 0
+                    : (((SrcPath<T>) a).rat() < ((SrcPath<T>) b).rat() ? -1 : 1));
+            for (Object o : Arrays.asList(Arrays.copyOf(x, amount - source.size()))) {
+               source.add((SrcPath<T>) o);
             }
             break;
          }
@@ -137,7 +234,14 @@ public class Test<T extends TwoSided> {
     * Starts the test.
     */
    public void startTest() {
-      new Thread(() -> {
+      (doOnSec == null ? new Thread(() -> {
+         try {
+            for (; time >= 0; time--) {
+               Thread.sleep(1000);
+            }
+         } catch (InterruptedException ex) {
+         }
+      }) : new Thread(() -> {
          try {
             for (; time >= 0; time--) {
                if (doOnSec != null) {
@@ -147,41 +251,63 @@ public class Test<T extends TwoSided> {
             }
          } catch (InterruptedException ex) {
          }
-      }).start();
+      })).start();
    }
 
    /**
     * Tests if user answered correctly.
     *
-    * @param source {@link objects.Element} that is the main answer, but doesn't
-    * have to
+    * @param index index of the answered object
     * @param answer the answer of the user
     * @return {@code true} if the user matched the translation for all of the
     * source Element's children (in most cases if matches its name), otherwise
     * {@code false}
     *
     */
-   public boolean isAnswer(T source, String answer) {
-      if (answered[this.source.indexOf(source)]) {
+   public boolean isAnswer(int index, String answer) {
+      if (index >= source.size()) {
+         throw new IllegalArgumentException("Outside of tested size: " + index + " out of " + (source.size() - 1));
+      }
+      if (answered[index]) {
          throw new IllegalArgumentException("Can't answer more than once, only one try allowed!");
       } else {
-         answered[this.source.indexOf(source)] = true;
+         answered[index] = true;
       }
-      if (answer == null || answer.isEmpty()) {
-         return false;
+      boolean b = false;
+      if (answer != null && !answer.isEmpty()) {
+         for (String s : NameReader.readName(source.get(index).t)) {
+            if (s.equals(answer)) {
+               b = true;
+               break;
+            }
+         }
+         if (!b) {
+            b = Arrays.stream(source.get(index).t.getChildren()).allMatch((t) -> Arrays.stream(
+                    ((TwoSided) t).getChildren()).anyMatch((ch) -> Arrays.stream(
+                    NameReader.readName(ch)).anyMatch((s) -> s.equals(answer))));
+         }
       }
-      return Arrays.stream(source.getChildren()).allMatch((t) -> Arrays.stream(
-              ((TwoSided) t).getChildren()).anyMatch((ch) -> Arrays.stream(
-              NameReader.readName(ch)).anyMatch((s) -> s.equals(answer))));
+      mch.addSF(b);
+      boolean bool = b;
+      source.get(index).srcPath.forEach((e) -> ((BasicData) e).addSF(bool));
+      Arrays.asList(source.get(index).getChildren()).forEach((e) -> e.addSF(bool));
+      return b;
    }
 
    /**
     * Gives translates for the piced up testing objects.
     *
-    * @param pos index of the tested object which translates you want to get
+    * @param index index of the tested object which translates you want to get
     * @return children of the asked object
     */
-   public T[] getTested(int pos) {
-      return (T[]) source.get(pos).getChildren();
+   public T[] getTested(int index) {
+      if (index >= source.size()) {
+         return null;
+      }
+      return (T[]) source.get(index).t.getChildren();
+   }
+
+   public List<SrcPath<T>> getTestSrc() {
+      return new ArrayList<>(source);
    }
 }

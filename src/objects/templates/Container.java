@@ -1,13 +1,9 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package objects.templates;
 
 import java.util.Arrays;
 
 /**
+ * This hierarchy object can contain any other hierarchy objects.
  *
  * @author Josef Litoš
  */
@@ -15,11 +11,11 @@ public interface Container extends BasicData {
 
    BasicData[] getChildren();
 
-   BasicData[] getChildren(Container c);
+   BasicData[] getChildren(Container parent);
 
-   void putChild(Container c, BasicData e);
+   void putChild(Container parent, BasicData e);
 
-   boolean removeChild(Container c, BasicData e);
+   boolean removeChild(Container parent, BasicData e);
 
    Container removeChild(BasicData e);
 
@@ -45,9 +41,16 @@ public interface Container extends BasicData {
          }
       }
       return true;
-//      return Arrays.stream(getChildren(c)).allMatch((e) -> e.isEmpty(this));
    }
 
+   /**
+    * Writes children of this object.
+    *
+    * @param sb the source, where to add the text;
+    * @param tabs amount of tabs on the start of every line
+    * @param cp parent of this object
+    * @return the same object as param {@code sb}
+    */
    default StringBuilder writeData0(StringBuilder sb, int tabs, Container cp) {
       //tabs(sb, tabs++, "{ ").add(sb, this, cp, true, true, true, true, true); this has to be altered with what is needed to be written, than call this method
       boolean first = true;
@@ -61,6 +64,7 @@ public interface Container extends BasicData {
             bd.writeData(sb, tabs, this);
          }
       }
-      return sb.append(" ] }");
+      tabs(sb, tabs - 1, ']');
+      return sb.append('}');
    }
 }

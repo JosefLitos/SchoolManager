@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package IOSystem;
 
 import static IOSystem.Formatter.Data;
@@ -37,7 +32,7 @@ public abstract class ReadElement {
        */
       public int index;
 
-      public final MainChapter i;
+      public MainChapter i;
 
       public Source(String s, int index, MainChapter identifier) {
          this.str = s;
@@ -47,48 +42,32 @@ public abstract class ReadElement {
    }
 
    /**
-    * Loads the full hierarchy fro, its folder.
-    *
-    * @param mchDir the hierarchy folder to be read
-    * @return returns the loaded {@link MainChapter}
-    */
-   public static MainChapter loadAll(File mchDir) {
-      MainChapter mch = loadMch(new File(mchDir + "\\main.json"));
-//      Arrays.asList(mch.getChildren()).forEach((sch)
-//              -> loadSch(new File(mchDir + "\\Chapters\\" + sch + ".json"), mch,mch));
-      return mch;
-   }
-
-   /**
     * Creates {@link MainChapter} object with information from the given file.
     *
-    * @param save the file the returned object is saved in
+    * @param save the folder the returned object is saved in
     * @return created head-object of the hierarchy containing basic information
     * about its content
     */
    public static MainChapter loadMch(File save) {
-      loadSch(save, null, null);
-      String[] str = save.toString().split("\\\\");
-      String name = str[str.length - 2];
-      for (MainChapter mch : MainChapter.ELEMENTS) {
-         if (mch.toString().equals(name)) {
-            return mch;
-         }
-      }
-      return null;
+      return (MainChapter) loadSch(new File(save.getPath() + "\\main.json"), null, null);
    }
 
    /**
     * Loads all data into the respective {@link SaveChapter} using {@link #readElement(IOSystem.ReadElement.Source, objects.Chapter)
     * readData} method which all objects have to implement in static form.
     *
-    * @param toLoad should contain the data of the loaded object
-    * @param identifier the parent of the loaded object
+    * @param toLoad File containing the data of the loaded object
+    * @param parent the parent of the loaded object
+    * @return the main object loaded from the given file
     */
-   public static void loadSch(File toLoad, MainChapter identifier, Container parent) {
+   public static Container loadSch(File toLoad, Container parent) {
+      return loadSch(toLoad, parent == null ? null : parent.getIdentifier(), parent);
+   }
+
+   public static Container loadSch(File toLoad, MainChapter identifier, Container parent) {
       Source src = new Source(Formatter.loadFile(toLoad), 0, identifier);
       dumpSpace(src, '{', '\t', '\n');
-      read(src, parent);
+      return (Container) read(src, parent);
    }
 
    /**
@@ -104,7 +83,7 @@ public abstract class ReadElement {
       BasicData bd = null;
       if (next(src).equals(Formatter.CLASS)) {
          try {
-            bd = (BasicData) Class.forName(next(src)).getDeclaredMethod("readData",
+            bd = (BasicData) Class.forName(next(src).toString()).getDeclaredMethod("readData",
                     Source.class, Container.class).invoke(null, src, cp);
          } catch (IllegalAccessException | java.lang.reflect.InvocationTargetException
                  | NoSuchMethodException | SecurityException | ClassNotFoundException ex) {
@@ -131,17 +110,16 @@ public abstract class ReadElement {
    public static Data get(Source src, boolean name, boolean sf, boolean desc, boolean child, Container parent, String... tags) {
       String[] data = new String[2];
       int[] sucfail = {0, 0};
-      String[] info = new String[tags.length];
+      Object[] info = new Object[tags.length];
       String holder = null;
       int bolRes = (name ? 1 : 0) + (sf ? 2 : 0) + (desc ? 1 : 0) + (child ? 1 : 0);
       for (int i = tags.length + bolRes; i > 0; i--) {
          try {
-            holder = next(src, ',');
+            holder = next(src, ',').toString();
          } catch (IllegalArgumentException iae) {
             if (iae.getMessage().contains("'}'")) {
                src.index--;
                return new Data(data[0], src.i, sucfail[0], sucfail[1], data[1], parent, info);
-
             } else {
                throw iae;
             }
@@ -149,21 +127,20 @@ public abstract class ReadElement {
          sorter:
          switch (holder) {
             case Formatter.NAME:
-               data[0] = next(src);
+               data[0] = next(src).toString();
                break;
             case Formatter.SUCCESS:
-               sucfail[0] = Integer.parseInt(next(src));
+               sucfail[0] = (int) (long) next(src);
                break;
             case Formatter.FAIL:
-               sucfail[1] = Integer.parseInt(next(src));
+               sucfail[1] = (int) (long) next(src);
                break;
             case Formatter.DESC:
-               data[1] = next(src);
+               data[1] = next(src).toString();
                break;
             case Formatter.CHILDREN:
                dumpSpace(src, '[');
-               i = 0;
-               break;
+               return new Data(data[0], src.i, sucfail[0], sucfail[1], data[1], parent, info);
             default:
                for (int j = tags.length - 1; j >= 0; j--) {
                   if (holder.equals(tags[j])) {
@@ -172,7 +149,7 @@ public abstract class ReadElement {
                   }
                }
                throw new IllegalArgumentException("Unknown field while getting value for "
-                       + holder + ", char num: " + src.index);
+                       + holder + ", char num: " + src.index + '\n' + src.str.substring(0, src.index) + "<-- here");
          }
       }
       return new Data(data[0], src.i, sucfail[0], sucfail[1], data[1], parent, info);
@@ -197,7 +174,8 @@ public abstract class ReadElement {
    public static List<Data> readChildren(Source src, boolean name, boolean sf, boolean desc, Container parent, String... tags) {
       List<Data> datas = new java.util.ArrayList<>();
       try {
-         while (dumpSpace(src, '{', ',', '\n', '\t')) {
+         while (true) {
+            dumpSpace(src, '{', ',', '\n', '\t');
             datas.add(get(src, name, sf, desc, false, parent));
             dumpSpace(src, '}');
          }
@@ -237,7 +215,7 @@ public abstract class ReadElement {
     * @param src contains the reading data
     * @param end the char this method is supposed to find
     * @param ignore list of ignored chars
-    * @return {@code true} if the found char matches the argument {@code end}.
+    * @return {@code true} if the last char matches the param {code end}
     * @throws IllegalArgumentException if the unknown char doesn't match the
     * argument {@code end}.
     */
@@ -256,10 +234,13 @@ public abstract class ReadElement {
          }
       } while (ctn);
       if (ch != end) {
-         throw new IllegalArgumentException("Unknown field, char  '" + ch + "', num: " + src.index);
-      } else {
-         return true;
+         if (ch == 't' || ch == 'f' || Character.isDigit(ch)) {
+            src.index--;
+            return false;
+         }
+         throw new IllegalArgumentException("Unknown field, char  '" + ch + "':\n" + src.str.substring(0, src.index) + "<-- here!");
       }
+      return true;
    }
 
    /**
@@ -271,24 +252,50 @@ public abstract class ReadElement {
     * @param ignore chars whose will be ignored
     * @return the found {@link String}
     */
-   public static String next(Source src, char... ignore) {
+   public static Object next(Source src, char... ignore) {
       StringBuilder sb = new StringBuilder();
-      dumpSpace(src, '"', ignore);
-      char ch;
-      while ((ch = src.str.charAt(src.index++)) != '"') {
-         if (ch == '\\') {
-            ch = src.str.charAt(src.index++);
+      boolean isString = dumpSpace(src, '"', ignore);
+      char ch = '\u0000';
+      if (isString) {
+         while ((ch = src.str.charAt(src.index++)) != '"') {
+            if (ch == '\\') {
+               ch = src.str.charAt(src.index++);
+            }
+            sb.append(ch);
          }
-         sb.append(ch);
+         return sb.toString();
+      } else {
+         byte i = 4;
+         switch (ch) {
+            case 'f':
+               i++;
+            case 't':
+               while (i-- > 0) {
+                  sb.append(src.str.charAt(src.index++));
+               }
+               return Boolean.valueOf(sb.toString());
+            default:
+               while (Character.isDigit(ch = src.str.charAt(src.index++)) || ch == '.') {
+                  sb.append(ch);
+                  if (ch == '.') {
+                     isString = true;
+                  }
+               }
+               src.index--;
+               //isString ? Double.parseDouble(sb.toString()) : Long.parseLong(sb.toString()); v obou stavech isString vrací double
+               if (isString) {
+                  return Double.parseDouble(sb.toString());
+               }
+               return Long.parseLong(sb.toString());
+         }
       }
-      return sb.toString();
    }
 
    /**
     * Creates an {@link objects.templates.BasicData} from the loaded data.
     *
     * @param src {@link Source}
-    * @param cp parent of the created object
+    * @param cp parent of the object to be created
     * @return the loaded object
     */
    public abstract BasicData readData(Source src, Container cp);

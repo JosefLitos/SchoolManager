@@ -10,35 +10,40 @@ import static IOSystem.Formatter.deserializeTo;
 import static IOSystem.Formatter.getPath;
 import static IOSystem.Formatter.serialize;
 import java.io.File;
+import java.util.List;
 import java.util.Map;
 import objects.templates.Container;
 import objects.templates.BasicData;
 import objects.templates.ContainerFile;
 
 /**
- * Head object of hierarchy of all {@link BasicData elemetary} objects. Saves
- * this hierarchy into folder under name of this object in the specified
- * {@link IOSystem.Formatter#objDir directory}. Should be {@link #name named}
- * after the school object this hierarchy represents.
+ * Head object of hierarchy of all {@link BasicData elemetary} objects. The
+ * hierarchy is stored in its own folder under name of this object in the
+ * specified {@link IOSystem.Formatter#objDir directory}. Should be
+ * {@link #name named} after the school object this hierarchy represents.
  *
  * @author Josef Litoš
  */
 public class MainChapter extends objects.templates.SemiElementContainer implements ContainerFile {
 
    /**
-    * read-only data
+    * Contains all loaded hierarchies. read-only data
     */
    public static final java.util.Set<MainChapter> ELEMENTS = new java.util.HashSet<>();
    /**
     * This file contains everything about this object and its
-    * {@link #children children}.
+    * {@link #children content} together with its own
+    * {@link #settings settings}.
     */
    File dir;
 
    public File getDir() {
       return dir;
    }
-
+   /**
+    * Contains propertions, options, or anything else that has something to do
+    * with this hierarchy.
+    */
    protected Map<String, Object> settings = new java.util.HashMap<>();
 
    public Object getSetting(String key) {
@@ -56,7 +61,7 @@ public class MainChapter extends objects.templates.SemiElementContainer implemen
    }
 
    @Override
-   public File getSaveFile(Container c) {
+   public File getSaveFile() {
       return new File(dir + "\\main.json");
    }
 
@@ -64,18 +69,18 @@ public class MainChapter extends objects.templates.SemiElementContainer implemen
     * Only this constructor creates the head object of the hierarchy. The
     * hierarchy files are saved in its {@link #dir directory}.
     *
-    * @param d must contain {@link #name name}
+    * @param d must contain {@link #name name} of this hierarchy.
     */
    public MainChapter(IOSystem.Formatter.Data d) {
       super(d);
-      BasicData.isCorrect(name);
+      ContainerFile.isCorrect(name);
       dir = createDir(getPath() + name);
-      createDir(dir.getPath() + "\\Chapters");
       File setts = new File(dir + "\\setts.dat");
       if (setts.exists()) {
          settings = (Map<String, Object>) serialize(dir + "\\setts.dat");
       } else {
          deserializeTo(dir + "\\setts.dat", settings);
+         createDir(dir.getPath() + "\\Chapters");
       }
       ELEMENTS.add(this);
    }
@@ -99,13 +104,13 @@ public class MainChapter extends objects.templates.SemiElementContainer implemen
 
    @Override
    public boolean setName(String name) {
-      BasicData.isCorrect(name);
+      ContainerFile.isCorrect(name);
       File newDir = new File(getPath() + name);
       for (byte i = 0; i < 5; i++) {
          if (dir.renameTo(newDir)) {
             dir = newDir;
             this.name = name;
-            save(null);
+            save();
             return true;
          }
       }
@@ -117,7 +122,7 @@ public class MainChapter extends objects.templates.SemiElementContainer implemen
     * {@link #ELEMENTS list}.
     */
    public void close() {
-      save(null);
+      save();
       ELEMENTS.remove(this);
    }
 
@@ -126,31 +131,47 @@ public class MainChapter extends objects.templates.SemiElementContainer implemen
       return this;
    }
 
-   public void loadAll() {
+   /**
+    * In this implementation of {@link ContainerFile} this method loads all
+    * {@link SaveChapter file chapters} belonging to this object.
+    */
+   @Override
+   public void load() {
+      List<SaveChapter> schs = SaveChapter.ELEMENTS.get(this);
+      if (schs == null) {
+         return;
+      }
+      int size;
       do {
-         for (SaveChapter sch : SaveChapter.ELEMENTS.get(this)) {
-            if (!sch.loaded) {
-               sch.load(this);
+         for (int i = (size = schs.size()) - 1; i >= 0; i--) {
+            if (!schs.get(i).loaded) {
+               schs.get(i).load();
             }
          }
-      } while (SaveChapter.ELEMENTS.get(this).stream().anyMatch((sch) -> !sch.loaded));
+      } while (size < schs.size());
    }
 
    @Override
-   public boolean isLoaded(Container parent) {
+   public boolean isLoaded() {
       return true;
    }
 
    @Override
    public StringBuilder writeData(StringBuilder sb, int tabs, Container cp) {
-      tabs(sb, tabs++, "{ ").add(sb, this, null, true, true, true, true, true);
       deserializeTo(dir + "\\setts.dat", settings);
-      return writeData0(sb, tabs, cp);
+      sb.append('{');
+      add(sb, this, null, true, true, true, true, null, null, true);
+      return writeData0(sb, 1, cp);
    }
 
+   /**
+    * Implementation of
+    * {@link IOSystem.ReadElement#readData(IOSystem.ReadElement.Source, objects.templates.Container) loading from String}.
+    */
    public static BasicData readData(IOSystem.ReadElement.Source src, Container parent) {
       MainChapter mch = new MainChapter(IOSystem.ReadElement.get(src, true, true, true, true, null));
-      IOSystem.ReadElement.loadChildren(src, null).forEach((e) -> mch.putChild(parent, e));
+      src.i = mch;
+      IOSystem.ReadElement.loadChildren(src, mch).forEach((e) -> mch.putChild(parent, e));
       return mch;
    }
 }

@@ -1,13 +1,10 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package objects.templates;
 
 import IOSystem.Formatter.Data;
 
 /**
+ * Basics of a hierarchy object and basic implementation of a {@link Container}.
+ * Doesn't care about its parent.
  *
  * @author Josef Litoš
  */
@@ -24,7 +21,7 @@ public abstract class SemiElementContainer extends BasicElement implements Conta
    }
 
    @Override
-   public BasicData[] getChildren(Container c) {
+   public BasicData[] getChildren(Container none) {
       return getChildren();
    }
 
@@ -34,7 +31,7 @@ public abstract class SemiElementContainer extends BasicElement implements Conta
    }
 
    @Override
-   public boolean removeChild(Container c, BasicData e) {
+   public boolean removeChild(Container none, BasicData e) {
       removeChild(e);
       return true;
    }
@@ -51,12 +48,12 @@ public abstract class SemiElementContainer extends BasicElement implements Conta
    protected String description;
 
    @Override
-   public String getDesc(Container c) {
+   public String getDesc(Container none) {
       return description;
    }
 
    @Override
-   public String putDesc(Container c, String desc) {
+   public String putDesc(Container none, String desc) {
       String old = description;
       description = desc;
       return old;

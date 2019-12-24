@@ -1,19 +1,16 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package objects;
 
 import IOSystem.Formatter.Data;
 import IOSystem.ReadElement.Source;
+import static IOSystem.WriteElement.obj;
+import static IOSystem.WriteElement.str;
 import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 import objects.templates.BasicData;
 import objects.templates.Container;
 import objects.templates.ContainerFile;
-import objects.templates.ElementContainer;
+import objects.templates.SimpleEContainer;
 
 /**
  * Contains other hierarchy objects. Every instance of this class saves into its
@@ -21,15 +18,15 @@ import objects.templates.ElementContainer;
  *
  * @author Josef Litoš
  */
-public class SaveChapter extends ElementContainer implements ContainerFile {
+public class SaveChapter extends SimpleEContainer implements ContainerFile {
 
    /**
-    * read-only data
+    * Contains all instances of this class created. All SaveChapters are sorted
+    * by the {@link MainChapter hierarchy} they belong to. read-only data
     */
    public static final Map<MainChapter, java.util.List<SaveChapter>> ELEMENTS = new HashMap<>();
 
    public boolean loaded;
-   public Container parent;
    private byte hash;
 
    /**
@@ -50,7 +47,7 @@ public class SaveChapter extends ElementContainer implements ContainerFile {
          }
       }
       for (SaveChapter sch : ELEMENTS.get(d.identifier)) {
-         if (d.name.equals(sch.toString()) && d.par == sch.parent) {
+         if (d.name.equals(sch.toString()) && ((long) d.tagVals[0]) == (sch.hash + 129)) {
             sch.loaded = full;
             return sch;
          }
@@ -60,12 +57,12 @@ public class SaveChapter extends ElementContainer implements ContainerFile {
 
    protected SaveChapter(Data d, boolean full) {
       super(d);
-      BasicData.isCorrect(name);
+      ContainerFile.isCorrect(name);
       parent = d.par;
       loaded = full;
       //hash-creator
       if (!full) {
-         hash = (byte) (Short.parseShort(d.tagVals[0]) - 129);
+         hash = (byte) (((long) d.tagVals[0]) - 129);
       } else {
          Byte b = ((Map<String, Byte>) identifier.getSetting("schNameCount")).get(name);
          ((Map<String, Byte>) identifier.getSetting("schNameCount")).put(name, hash = (byte) (b == null ? -128 : (b + 1)));
@@ -77,11 +74,28 @@ public class SaveChapter extends ElementContainer implements ContainerFile {
       ELEMENTS.get(d.identifier).add(this);
    }
 
+   @Override
+   public boolean isEmpty(Container c) {
+      if (c != parent) {
+         return true;
+      }
+      if (children.isEmpty()) {
+         return loaded;
+      }
+      return ContainerFile.super.isEmpty(c);
+   }
+
+   /**
+    * Cleans the database numbering of SaveChapters. This is needed, when
+    * SaveChapters were removed and they weren't last of the given name.
+    *
+    * @param mch the hierarchy to be cleaned
+    */
    public static void clean(MainChapter mch) {
       if (!isCleanable(mch)) {
          return;
       }
-      mch.loadAll();
+      mch.load();
       String exceptions = "";
       String dir = mch.getDir() + "\\Chapters\\";
       Map<String, Byte> schNC = new HashMap<>();
@@ -107,25 +121,18 @@ public class SaveChapter extends ElementContainer implements ContainerFile {
       mch.putSetting("schRemoved", false);
    }
 
+   /**
+    * Tells, if the given hierarchy can get cleaned of SaveChapter file numbers.
+    *
+    * @param mch source
+    * @return {@code true} if an image has been deleted from the hierarchy
+    */
    public static boolean isCleanable(MainChapter mch) {
       return (boolean) mch.getSetting("schRemoved");
    }
 
    @Override
-   public boolean isEmpty(Container c) {
-      if (children.get(c) == null) {
-         return loaded;
-      }
-      for (BasicData bd : getChildren(c)) {
-         if (!bd.isEmpty(this)) {
-            return false;
-         }
-      }
-      return true;
-   }
-
-   @Override
-   public File getSaveFile(Container parent) {
+   public File getSaveFile() {
       return new File(identifier.getDir().getPath() + "\\Chapters\\" + '(' + (hash + 129) + ") " + name + ".json");
    }
 
@@ -163,22 +170,25 @@ public class SaveChapter extends ElementContainer implements ContainerFile {
    @Override
    public StringBuilder writeData(StringBuilder sb, int tabs, Container cp) {
       if (tabs == 0) {
-         tabs(sb, tabs++, "{ ").add(sb, this, cp, true, true, true, true, false)
-                 .append(", \"hash\": \"").append(hash + 129).append('"');
-         add(sb, this, cp, false, false, false, false, true);
-         return writeData0(sb, tabs, cp);
+         sb.append('{');
+         add(sb, this, cp, true, true, true, true, str("hash"), obj(hash + 129), true);
+         return writeData0(sb, 1, cp);
       }
       if (loaded) {
-         save(cp);
+         save();
       }
-      tabs(sb, tabs++, "{ ").add(sb, this, cp, true, true, true, true, false);
-      return sb.append(" }");
+      tabs(sb, tabs++, '{').add(sb, this, cp, true, true, true, true, str("hash"), obj(hash + 129), false);
+      return sb.append('}');
    }
 
+   /**
+    * Implementation of
+    * {@link IOSystem.ReadElement#readData(IOSystem.ReadElement.Source, objects.templates.Container) loading from String}.
+    */
    public static BasicData readData(Source src, Container parent) {
-      if (src.index < 2) {
+      if (parent == null) {
          SaveChapter sch = mkElement(IOSystem.ReadElement.get(
-                 src, true, true, true, true, parent), true);
+                 src, true, true, true, true, parent, "hash"), true);
          IOSystem.ReadElement.loadChildren(src, sch).forEach((e)
                  -> sch.putChild(parent, e));
          return sch;
@@ -187,7 +197,7 @@ public class SaveChapter extends ElementContainer implements ContainerFile {
    }
 
    @Override
-   public boolean isLoaded(Container parent) {
+   public boolean isLoaded() {
       return loaded;
    }
 }

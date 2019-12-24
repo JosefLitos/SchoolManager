@@ -1,14 +1,9 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package testing;
 
 import IOSystem.ReadElement;
-import java.util.Arrays;
 import java.util.LinkedList;
 import objects.templates.BasicData;
+import objects.templates.Element;
 
 /**
  * Can {@link #readName(objects.Element) decode} a String written in a specific
@@ -33,11 +28,11 @@ public class NameReader {
     * "(We/(May you) 're)/He's /out." returns [We're., May you're., He's., We're out., May you're out., He's out.]
     * </pre></blockquote>
     *
-    * @param bd the {@link BasicData} its name will be proccessed
+    * @param o the {@link BasicData} its name will be proccessed
     * @return all variants of the {@link Element#name}
     */
-   public static String[] readName(BasicData bd) {
-      return getParts(new ReadElement.Source(bd.getName(), 0, bd.getIdentifier()), true);
+   public static String[] readName(Object o) {
+      return getParts(new ReadElement.Source(o.toString(), 0, null), true);
    }
 
    private static String[] getParts(ReadElement.Source src, boolean first) {
@@ -58,7 +53,7 @@ public class NameReader {
             case '!':
             case '?':
             case ',':
-               itpcn = true;//interpunction
+               itpcn = true;//interpunction found
             case ' ':
                if (itpcn && !slash && index + 1 < src.str.length()) {
                   itpcn = false;
@@ -132,18 +127,5 @@ public class NameReader {
 
    private static String substr(String str, int begin, int end) {
       return str.substring(begin, end).replace("\\", "");
-   }
-
-   public static void main(String[] args) {
-      sA("They/(He and she) moved.");
-      sA("/I/You smile.");
-      sA("(I/You smile.)/(Smile!)");
-      sA("I 'm/am here/there.");
-      sA("(We/(May you) 're)/He's /out.");
-      sA("(high/free)way");
-   }
-
-   public static void sA(String str) {
-      System.out.println(Arrays.toString(getParts(new ReadElement.Source(str, 0, null), true)));
    }
 }

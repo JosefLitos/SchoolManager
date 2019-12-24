@@ -1,5 +1,6 @@
 package objects;
 
+import objects.templates.TwoSided;
 import IOSystem.Formatter.Data;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -18,9 +19,17 @@ import objects.templates.Container;
 public class Word extends TwoSided<Word> {
 
    /**
-    * read-only data
+    * Contains all instances of this class created as the {@link #isMain main}
+    * version. All Words are sorted by the {@link MainChapter hierarchy} they
+    * belong to. read-only data
     */
    public static final Map<MainChapter, List<Word>> TRANSLATES = new HashMap<>();
+
+   /**
+    * Contains all instances of this class created as the
+    * {@link #isMain non-main} version. All Translates are sorted by the
+    * {@link MainChapter hierarchy} they belong to. read-only data
+    */
    public static final Map<MainChapter, List<Word>> ELEMENTS = new HashMap<>();
 
    /**
@@ -36,6 +45,9 @@ public class Word extends TwoSided<Word> {
     * same name and adds the new translations.
     */
    public static final Word mkElement(Data bd, List<Data> translates) {
+      if (translates == null || translates.isEmpty()) {
+         throw new NullPointerException();
+      }
       if (ELEMENTS.get(bd.identifier) == null) {
          ELEMENTS.put(bd.identifier, new LinkedList<>());
          TRANSLATES.put(bd.identifier, new LinkedList<>());
@@ -63,7 +75,7 @@ public class Word extends TwoSided<Word> {
     */
    private void addTranslates(List<Data> translates, Container parent) {
       TRANSLATES.get(identifier).forEach((t) -> {
-         for (int i = translates.size()-1;i>=0;i--) {
+         for (int i = translates.size() - 1; i >= 0; i--) {
             condition:
             if (translates.get(i).name.equals(t.name)) {
                if (t.children.get(parent) != null) {
@@ -136,7 +148,8 @@ public class Word extends TwoSided<Word> {
                   w.children.put(ch, children.get(ch));
                   w.parentCount++;
                } else {
-                  w.children.get(ch).addAll(Arrays.asList(getChildren(ch)));
+                  List<Word> trls = w.children.get(ch);
+                  Arrays.asList(getChildren(ch)).forEach((e) -> trls.add((Word) e));
                }
             }
             ELEMENTS.get(identifier).remove(this);
@@ -147,11 +160,15 @@ public class Word extends TwoSided<Word> {
       return true;
    }
 
-   public static void readElement(IOSystem.ReadElement.Source src, Container parent) {
+   /**
+    * Implementation of
+    * {@link IOSystem.ReadElement#readData(IOSystem.ReadElement.Source, objects.templates.Container) loading from String}.
+    */
+   public static BasicData readData(IOSystem.ReadElement.Source src, Container parent) {
       Data data = IOSystem.ReadElement
               .get(src, true, true, true, true, parent);
       List<Data> children = IOSystem.ReadElement
               .readChildren(src, true, true, true, parent);
-      mkElement(data, children);
+      return mkElement(data, children);
    }
 }

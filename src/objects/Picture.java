@@ -1,10 +1,6 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package objects;
 
+import objects.templates.TwoSided;
 import IOSystem.Formatter.Data;
 import static IOSystem.Formatter.createDir;
 import java.io.BufferedInputStream;
@@ -17,18 +13,28 @@ import java.util.List;
 import java.util.Map;
 import objects.templates.BasicData;
 import objects.templates.Container;
+import objects.templates.ContainerFile;
 
 /**
- * This class creates objects containing images under the given name.
+ * Creates objects containing images associated with a given
+ * {@link Data#name name}.
  *
  * @author Josef Litoš
  */
 public class Picture extends TwoSided<Picture> {
 
    /**
-    * read-only data
+    * Contains all instances of this class created as the {@link #isMain main}
+    * version. All Pictures are sorted by the {@link MainChapter hierarchy} they
+    * belong to. read-only data
     */
    public static final Map<MainChapter, List<Picture>> IMAGES = new HashMap<>();
+
+   /**
+    * Contains all instances of this class created as the
+    * {@link #isMain non-main} version. All Images are sorted by the
+    * {@link MainChapter hierarchy} they belong to. read-only data
+    */
    public static final Map<MainChapter, List<Picture>> ELEMENTS = new HashMap<>();
 
    /**
@@ -62,7 +68,10 @@ public class Picture extends TwoSided<Picture> {
     * the same name and adds the new images.
     */
    public static Picture mkElement(Data d, List<Data> images, boolean isNew) {
-      BasicData.isCorrect(d.name);
+      if (images == null || images.isEmpty()) {
+         throw new NullPointerException();
+      }
+      ContainerFile.isCorrect(d.name);
       if (ELEMENTS.get(d.identifier) == null) {
          ELEMENTS.put(d.identifier, new ArrayList<>());
          IMAGES.put(d.identifier, new ArrayList<>());
@@ -111,7 +120,7 @@ public class Picture extends TwoSided<Picture> {
     */
    private Picture(Picture pic, File save, Data bd, boolean isNew) {
       super(bd, false, IMAGES);
-      BasicData.isCorrect(name);
+      ContainerFile.isCorrect(name);
       children.put(bd.par, new ArrayList<>(Arrays.asList(new Picture[]{pic})));
       picParentCount(isNew);
       if (isNew) {
@@ -133,7 +142,7 @@ public class Picture extends TwoSided<Picture> {
    }
 
    /**
-    * This constructor is used only to create main instance of this class.
+    * This constructor is used only to create a main instance of this class.
     */
    private Picture(Data bd, List<Data> images, boolean isNew) {
       super(bd, true, ELEMENTS);
@@ -143,11 +152,17 @@ public class Picture extends TwoSided<Picture> {
       addImages(images, bd.par, isNew);
    }
 
+   /**
+    * Cleans the database numbering of images. This is needed, when images were
+    * removed and they weren't last of the given name.
+    *
+    * @param mch the hierarchy to be cleaned
+    */
    public static void clean(MainChapter mch) {
       if (!isCleanable(mch)) {
          return;
       }
-      mch.loadAll();
+      mch.load();
       String exceptions = "";
       String dir = mch.getDir().getPath() + "\\Pictures\\";
       int size = ELEMENTS.get(mch).size();
@@ -172,13 +187,19 @@ public class Picture extends TwoSided<Picture> {
       mch.putSetting("imgRemoved", false);
    }
 
+   /**
+    * Tells, if the given hierarchy can get cleaned of image numbers.
+    *
+    * @param mch source
+    * @return {@code true} if an image has been deleted from the hierarchy
+    */
    public static boolean isCleanable(MainChapter mch) {
       return (boolean) mch.getSetting("imgRemoved");
    }
 
    @Override
    public boolean setName(String name) {
-      BasicData.isCorrect(name);
+      ContainerFile.isCorrect(name);
       if (this.name.equals(name) || children.isEmpty()) {
          return false;
       }
@@ -202,7 +223,8 @@ public class Picture extends TwoSided<Picture> {
                   p.children.put(ch, children.get(ch));
                   p.parentCount++;
                } else {
-                  p.children.get(ch).addAll(Arrays.asList(getChildren(ch)));
+                  List<Picture> ps = p.children.get(ch);
+                  Arrays.asList(getChildren(ch)).forEach((e) -> ps.add((Picture) e));
                }
             }
             ELEMENTS.get(identifier).remove(this);
@@ -263,11 +285,15 @@ public class Picture extends TwoSided<Picture> {
       return true;
    }
 
-   public static void readData(IOSystem.ReadElement.Source src, Container parent) {
+   /**
+    * Implementation of
+    * {@link IOSystem.ReadElement#readData(IOSystem.ReadElement.Source, objects.templates.Container) loading from String}.
+    */
+   public static BasicData readData(IOSystem.ReadElement.Source src, Container parent) {
       Data data = IOSystem.ReadElement
               .get(src, true, true, true, true, parent);
       List<Data> children = IOSystem.ReadElement
               .readChildren(src, true, true, true, parent);
-      mkElement(data, children, false);
+      return mkElement(data, children, false);
    }
 }

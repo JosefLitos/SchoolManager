@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package IOSystem;
 
 import java.io.File;
@@ -24,66 +19,6 @@ import objects.templates.Container;
  */
 public class Formatter {
 
-   static String objDir;
-//   static final String DIR = "SchlMgr\\";
-   public static final String CLASS = "class", NAME = "name", SUCCESS = "s",
-           FAIL = "f", CHILDREN = "cdrn", DESC = "desc";
-   static Map<String, String> settings = new java.util.HashMap<>();
-
-   public static String getPath() {
-      return objDir;
-   }
-
-   /**
-    * @see Map#get(java.lang.Object)
-    */
-   public static String getSetting(String key) {
-      return settings.get(key);
-   }
-
-   /**
-    * @see Map#put(java.lang.Object, java.lang.Object)
-    */
-   public static void putSetting(String key, String value) {
-      settings.put(key, value);
-      deserializeTo("SchlMgr\\settings.dat", settings);
-   }
-
-   /**
-    * Removes the settings value for the given key.
-    *
-    * @param key the tag that will be removed
-    */
-   public static void removeSetting(String key) {
-      settings.remove(key);
-      deserializeTo("SchlMgr\\settings.dat", settings);
-   }
-
-   /**
-    * This method changes the directory of saves of hierarchies.
-    *
-    * @param path the directory for this application
-    */
-   public static void changeDir(File path) {
-      objDir = ("".equals(path.getPath()) ? "" : path + "\\")
-              + (path.getPath().equals("School objects") ? "" : "School objects\\");
-      putSetting("objdir", objDir);
-      createDir(objDir);
-   }
-
-   public static File createDir(String dirStr) {
-      File dir = new File(dirStr);
-      if (!dir.exists()) {
-         dir.mkdir();
-         try {
-            dir.createNewFile();
-         } catch (IOException ex) {
-            throw new IllegalArgumentException(ex);
-         }
-      }
-      return dir;
-   }
-
    /**
     * This method has to be called at the start of the program.
     */
@@ -96,8 +31,97 @@ public class Formatter {
          createDir(objDir = "School objects\\");
          settings.put("objdir", "School objects\\");
          settings.put("language", "cz");
+         settings.put("randomType", "true");
          deserializeTo("settings.dat", settings);
       }
+   }
+   /**
+    * Path to the directory that contains all {@link MainChapter hierarchies's}
+    * folders and data
+    */
+   static String objDir;
+   public static final String CLASS = "class", NAME = "name", SUCCESS = "s",
+           FAIL = "f", CHILDREN = "cdrn", DESC = "desc";
+   static Map<String, String> settings = new java.util.HashMap<>();
+
+   public static String getPath() {
+      return mkRealPath(objDir);
+   }
+
+   /**
+    * @param key tag of the setting
+    * @return the value of the given key or {@code null} if settings doesn't
+    * contain that key
+    * @see Map#get(java.lang.Object)
+    */
+   public static String getSetting(String key) {
+      return settings.get(key);
+   }
+
+   /**
+    * @param key tag to be added or overrided in the settings of this program
+    * @param value value associated with the given tag
+    * @see Map#put(java.lang.Object, java.lang.Object)
+    */
+   public static void putSetting(String key, String value) {
+      settings.put(key, value);
+      deserializeTo("settings.dat", settings);
+   }
+
+   /**
+    * Removes the given key from the {@link Formatter#settings}.
+    *
+    * @param key the tag that will be removed
+    */
+   public static void removeSetting(String key) {
+      settings.remove(key);
+      deserializeTo("settings.dat", settings);
+   }
+
+   /**
+    * This method changes the directory of saves of hierarchies.
+    *
+    * @param path the directory for this application
+    */
+   public static void changeDir(String path) {
+      if (path.charAt(0) == System.getProperty("user.dir").charAt(0)) {
+         path = path.replaceFirst(System.getProperty("user.dir").charAt(0) + ":", "§");
+      }
+      objDir = ("".equals(path) ? "" : path + "\\")
+              + (path.contains("School objects") ? "" : "School objects\\");
+      putSetting("objdir", objDir);
+      createDir(objDir);
+   }
+
+   /**
+    * Makes a real path.
+    *
+    * @param path § on index 0 changes to current disc name
+    * @return the corrected path
+    */
+   public static String mkRealPath(String path) {
+      return path.charAt(0) == '§' ? path.replaceFirst("§",
+              System.getProperty("user.dir").charAt(0) + ":") : path;
+   }
+
+   /**
+    * Makes sure the given path is a created directory.
+    *
+    * @param dirStr § on index 0 changes to current disc name
+    * @return the created file
+    */
+   public static File createDir(String dirStr) {
+      dirStr = mkRealPath(dirStr);
+      File dir = new File(dirStr);
+      if (!dir.exists()) {
+         dir.mkdir();
+         try {
+            dir.createNewFile();
+         } catch (IOException ex) {
+            throw new IllegalArgumentException(ex);
+         }
+      }
+      return dir;
    }
 
    public static void deserializeTo(String destination, Object toSave) {
@@ -140,16 +164,20 @@ public class Formatter {
       }
    }
 
+   /**
+    * Object containing all neccessary data for creating a
+    * {@link MainChapter hierarchy} {@link objects.templates.BasicData element}.
+    */
    public static class Data {
 
       public String name;
       public MainChapter identifier;
       public int[] sf;
       public String description = "";
-      public String[] tagVals;
+      public Object[] tagVals;
       public Container par;
 
-      Data(String name, MainChapter identifier, int s, int f, String description, Container parent, String... tagValues) {
+      Data(String name, MainChapter identifier, int s, int f, String description, Container parent, Object... tagValues) {
          this(name, identifier, s, f, description, parent);
          tagVals = tagValues;
       }
@@ -198,22 +226,5 @@ public class Formatter {
       public String toString() {
          return name;
       }
-
-   }
-
-   public static void main(String[] args) {
-      loadSettings();
-      long x = System.currentTimeMillis();
-      MainChapter mch = ReadElement.loadAll(new File(objDir + "AJ"));
-      System.out.println(System.currentTimeMillis() - x);
-//      for (BasicData sch : mch.getChildren()) {
-//         int i = 0;
-//         for (BasicData ch : ((Container)sch).getChildren()) {
-//            i += ((Container)ch).getChildren().length;
-//            System.out.println(" " + ch.toString() + "\t" + ((Container)ch).getChildren().length + "\t" + i);
-//         }
-//         System.out.println(sch + "\t" + i + '\n');
-//      }
-      mch.save(null);
    }
 }

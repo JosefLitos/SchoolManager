@@ -1,11 +1,7 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package objects.templates;
 
 /**
+ * Basic implementation of the simplest hierarchy object.
  *
  * @author Josef Litoš
  */
@@ -23,7 +19,6 @@ public abstract class BasicElement implements BasicData {
 
    @Override
    public boolean setName(String name) {
-      BasicData.isCorrect(name);
       this.name = name;
       return true;
    }
@@ -41,6 +36,11 @@ public abstract class BasicElement implements BasicData {
    @Override
    public int[] getSF() {
       return sf;
+   }
+
+   @Override
+   public void addSF(boolean scs) {
+      sf[scs ? 0 : 1]++;
    }
 
    @Override
