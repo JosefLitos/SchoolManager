@@ -35,7 +35,7 @@ public abstract class SemiElementContainer extends BasicElement implements Conta
 
    @Override
    public BasicData[] getChildren(Container c) {
-      return parent == c || c == null ? getChildren() : null;
+      return (parent == c || c == null) ? getChildren() : null;
    }
 
    @Override
@@ -48,7 +48,7 @@ public abstract class SemiElementContainer extends BasicElement implements Conta
 
    @Override
    public boolean removeChild(Container c, BasicData e) {
-      return parent == c || c == null ? children.remove(e) : false;
+      return (parent == c || c == null) ? children.remove(e) : false;
    }
 
    @Override
