@@ -10,7 +10,7 @@ import java.util.Map;
 import objects.templates.BasicData;
 import objects.templates.Container;
 import objects.templates.ContainerFile;
-import objects.templates.SimpleEContainer;
+import objects.templates.SemiElementContainer;
 
 /**
  * Contains other hierarchy objects. Every instance of this class saves into its
@@ -18,7 +18,7 @@ import objects.templates.SimpleEContainer;
  *
  * @author Josef Litoš
  */
-public class SaveChapter extends SimpleEContainer implements ContainerFile {
+public class SaveChapter extends SemiElementContainer implements ContainerFile {
 
    /**
     * Contains all instances of this class created. All SaveChapters are sorted
@@ -26,7 +26,23 @@ public class SaveChapter extends SimpleEContainer implements ContainerFile {
     */
    public static final Map<MainChapter, java.util.List<SaveChapter>> ELEMENTS = new HashMap<>();
 
-   public boolean loaded;
+   private boolean loaded;
+
+   @Override
+   public boolean isLoaded() {
+      return loaded;
+   }
+
+   /**
+    * The head hierarchy object which this object belongs to.
+    */
+   protected final MainChapter identifier;
+
+   @Override
+   public MainChapter getIdentifier() {
+      return identifier;
+   }
+
    private byte hash;
 
    /**
@@ -57,6 +73,7 @@ public class SaveChapter extends SimpleEContainer implements ContainerFile {
 
    protected SaveChapter(Data d, boolean full) {
       super(d);
+      identifier = d.identifier;
       ContainerFile.isCorrect(name);
       parent = d.par;
       loaded = full;
@@ -83,6 +100,54 @@ public class SaveChapter extends SimpleEContainer implements ContainerFile {
          return loaded;
       }
       return ContainerFile.super.isEmpty(c);
+   }
+
+   @Override
+   public boolean hasChild(BasicData e) {
+      if (!loaded) {
+         load();
+      }
+      return super.hasChild(e);
+   }
+
+   @Override
+   public boolean hasChild(Container par, BasicData e) {
+      if (!loaded) {
+         load();
+      }
+      return super.hasChild(par, e);
+   }
+
+   @Override
+   public Container removeChild(BasicData e) {
+      if (!loaded) {
+         load();
+      }
+      return super.removeChild(e);
+   }
+
+   @Override
+   public boolean removeChild(Container c, BasicData e) {
+      if (!loaded) {
+         load();
+      }
+      return super.removeChild(c, e);
+   }
+
+   @Override
+   public boolean putChild(Container c, BasicData e) {
+      if (!loaded) {
+         load();
+      }
+      return super.putChild(c, e);
+   }
+
+   @Override
+   public BasicData[] getChildren() {
+      if (!loaded) {
+         load();
+      }
+      return super.getChildren();
    }
 
    /**
@@ -194,10 +259,5 @@ public class SaveChapter extends SimpleEContainer implements ContainerFile {
          return sch;
       }
       return mkElement(IOSystem.ReadElement.get(src, true, true, true, false, parent, "hash"), false);
-   }
-
-   @Override
-   public boolean isLoaded() {
-      return loaded;
    }
 }

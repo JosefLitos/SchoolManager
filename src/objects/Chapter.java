@@ -17,16 +17,6 @@ public class Chapter extends objects.templates.SemiElementContainer {
     * the {@link MainChapter hierarchy} they belong to. read-only data
     */
    public static final java.util.Map<MainChapter, List<Chapter>> ELEMENTS = new java.util.HashMap<>();
-   /**
-    * Parent of this object.
-    */
-   protected Container parent;
-
-   @Override
-   public Container removeChild(BasicData e) {
-      children.remove(e);
-      return parent;
-   }
 
    /**
     * The head hierarchy object which this object belongs to.

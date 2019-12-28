@@ -13,7 +13,7 @@ public interface Container extends BasicData {
 
    BasicData[] getChildren(Container parent);
 
-   void putChild(Container parent, BasicData e);
+   boolean putChild(Container parent, BasicData e);
 
    boolean removeChild(Container parent, BasicData e);
 

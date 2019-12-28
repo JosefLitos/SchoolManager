@@ -3,7 +3,6 @@ package objects.templates;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import objects.MainChapter;
 
 /**
  * Default implementation of a hierarchy object and full implementation of a
@@ -26,7 +25,7 @@ public abstract class TwoSided<T extends TwoSided> extends Element implements Co
     */
    protected int parentCount;
 
-   protected TwoSided(IOSystem.Formatter.Data bd, boolean isMain, Map<MainChapter, List<T>> NET) {
+   protected TwoSided(IOSystem.Formatter.Data bd, boolean isMain, Map<objects.MainChapter, List<T>> NET) {
       super(bd);
       this.isMain = isMain;
       NET.get(identifier).add((T) this);
@@ -36,7 +35,7 @@ public abstract class TwoSided<T extends TwoSided> extends Element implements Co
    /**
     * Contains all objects, which belong to this object.
     */
-   public final java.util.Map<Container, java.util.List<T>> children = new java.util.HashMap<>();
+   public final Map<Container, List<T>> children = new java.util.HashMap<>();
 
    @Override
    public TwoSided[] getChildren() {
@@ -51,11 +50,16 @@ public abstract class TwoSided<T extends TwoSided> extends Element implements Co
    }
 
    @Override
-   public void putChild(Container c, BasicData e) {
+   public boolean putChild(Container c, BasicData e) {
+      if (!(e instanceof TwoSided)) {
+         return false;
+      }
       if (children.get(c) == null) {
          children.put(c, new LinkedList<>());
+      } else if (children.get(c).contains((T) e)) {
+         return false;
       }
-      children.get(c).add((T) e);
+      return children.get(c).add((T) e);
    }
 
    @Override
@@ -102,6 +106,19 @@ public abstract class TwoSided<T extends TwoSided> extends Element implements Co
    @Override
    public boolean isEmpty(Container c) {
       return isMain ? children.get(c) == null || children.get(c).isEmpty() : false;
+   }
+
+   @Override
+   public boolean move(Container op, Container np, Container npp) {
+      if (isMain && super.move(op, np, npp)) {
+         for (T ch : children.remove(op)) {
+            putChild(np, ch);
+            ch.remove1(op, this);
+            ch.putChild(np, this);
+         }
+         return true;
+      }
+      return false;
    }
 
    @Override

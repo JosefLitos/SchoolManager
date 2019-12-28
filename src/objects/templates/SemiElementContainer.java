@@ -14,6 +14,19 @@ public abstract class SemiElementContainer extends BasicElement implements Conta
     * Contains its children.
     */
    protected final java.util.List<BasicData> children = new java.util.ArrayList<>();
+   /**
+    * The only real parent of this object.
+    */
+   protected Container parent;
+
+   @Override
+   public boolean move(Container op, Container np, Container npp) {
+      if (!super.move(parent, parent, npp)) {
+         return false;
+      }
+      parent = np;
+      return true;
+   }
 
    @Override
    public BasicData[] getChildren() {
@@ -21,24 +34,28 @@ public abstract class SemiElementContainer extends BasicElement implements Conta
    }
 
    @Override
-   public BasicData[] getChildren(Container none) {
-      return getChildren();
+   public BasicData[] getChildren(Container c) {
+      return parent == c || c == null ? getChildren() : null;
    }
 
    @Override
-   public void putChild(Container none, BasicData e) {
-      children.add(e);
+   public boolean putChild(Container c, BasicData e) {
+      if (parent == c || c == null) {
+         return children.add(e);
+      }
+      return false;
    }
 
    @Override
-   public boolean removeChild(Container none, BasicData e) {
-      removeChild(e);
-      return true;
+   public boolean removeChild(Container c, BasicData e) {
+      return parent == c || c == null ? children.remove(e) : false;
    }
 
    @Override
    public Container removeChild(BasicData e) {
-      children.remove(e);
+      if (children.remove(e)) {
+         return parent;
+      }
       return null;
    }
 
@@ -62,5 +79,8 @@ public abstract class SemiElementContainer extends BasicElement implements Conta
    protected SemiElementContainer(Data d) {
       super(d);
       description = d.description;
+      if ((parent = d.par) == null) {
+         throw new IllegalArgumentException("All objects have to have a parent!");
+      }
    }
 }

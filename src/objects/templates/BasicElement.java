@@ -1,7 +1,8 @@
 package objects.templates;
 
 /**
- * Basic implementation of the simplest hierarchy object.
+ * Basic implementation of the simplest hierarchy object, where it is not
+ * neccessary to know the parent.
  *
  * @author Josef Litoš
  */

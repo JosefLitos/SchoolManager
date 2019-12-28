@@ -82,20 +82,6 @@ public final class Reference implements BasicData {
       ELEMENTS.get(getIdentifier()).add(this);
    }
 
-   @Override
-   public boolean destroy(Container parent) {
-      if (--parentCount == 0) {
-         ELEMENTS.get(getIdentifier()).remove(this);
-      }
-      return parent.removeChild(this) != null;
-   }
-
-   @Override
-   public StringBuilder writeData(StringBuilder sb, int tabs, Container cp) {
-      tabs(sb, tabs, '{').add(sb, this, cp, true, true, false, false, str("refCls", "origin"), obj(reference.getClass().getName(), mkPath()), false);
-      return sb.append('}');
-   }
-
    private String mkPath() {
       String ret = "";
       for (Container c : path) {
@@ -168,6 +154,20 @@ public final class Reference implements BasicData {
    @Override
    public String toString() {
       return getName();
+   }
+
+   @Override
+   public boolean destroy(Container parent) {
+      if (--parentCount == 0) {
+         ELEMENTS.get(getIdentifier()).remove(this);
+      }
+      return parent.removeChild(this) != null || parent instanceof MainChapter;
+   }
+
+   @Override
+   public StringBuilder writeData(StringBuilder sb, int tabs, Container cp) {
+      tabs(sb, tabs, '{').add(sb, this, cp, true, true, false, false, str("refCls", "origin"), obj(reference.getClass().getName(), mkPath()), false);
+      return sb.append('}');
    }
 
    /**

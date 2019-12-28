@@ -37,6 +37,25 @@ public interface BasicData extends IOSystem.WriteElement {
    MainChapter getIdentifier();
 
    /**
+    * Moves this object from the specified parent to a different parent.
+    *
+    * @param oldParent old parent of this object
+    * @param newParent the new parent of this object
+    * @param newParPar parent of the new parent
+    * @return if the operation succeeded
+    */
+   default boolean move(Container oldParent, Container newParent, Container newParPar) {
+      if (oldParent.getIdentifier() != newParent.getIdentifier()) {
+         return false;
+      }
+      oldParent.removeChild(this);
+      if (!newParent.hasChild(newParPar, this)) {
+         newParent.putChild(newParPar, this);
+      }
+      return true;
+   }
+
+   /**
     * Alteres the current name of this object.
     *
     * @param name the new name for this object

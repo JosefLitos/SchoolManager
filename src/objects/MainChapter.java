@@ -144,7 +144,7 @@ public class MainChapter extends objects.templates.SemiElementContainer implemen
       int size;
       do {
          for (int i = (size = schs.size()) - 1; i >= 0; i--) {
-            if (!schs.get(i).loaded) {
+            if (!schs.get(i).isLoaded()) {
                schs.get(i).load();
             }
          }
