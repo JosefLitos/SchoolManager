@@ -7,6 +7,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
+import android.os.Build.VERSION;
 import android.os.Bundle;
 import android.provider.MediaStore.Images.Media;
 import android.view.LayoutInflater;
@@ -33,6 +34,7 @@ import android.widget.SearchView.OnQueryTextListener;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.core.graphics.drawable.DrawableCompat;
 import androidx.fragment.app.Fragment;
 
 import com.schlmgr.R;
@@ -54,7 +56,6 @@ import com.schlmgr.gui.list.SearchItemModel;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -170,6 +171,13 @@ public class MainFragment extends Fragment implements Controller.ControlListener
 					.setBounds((int) dp, 0, (int) (dp * 33), (int) (dp * 33));
 			(icPaste_disabled = res.getDrawable(R.drawable.ic_paste_disabled))
 					.setBounds((int) dp, 0, (int) (dp * 33), (int) (dp * 33));
+			if (VERSION.SDK_INT < 21) {
+				DrawableCompat.setTint(DrawableCompat.wrap(icDelete_disabled), 0x55FFFFFF); //for SD
+				DrawableCompat.setTint(DrawableCompat.wrap(icReference_disabled), 0x55FFFFFF);
+				DrawableCompat.setTint(DrawableCompat.wrap(icCut_disabled), 0x55FFFFFF);
+				DrawableCompat.setTint(DrawableCompat.wrap(icEdit_disabled), 0x55FFFFFF);
+				DrawableCompat.setTint(DrawableCompat.wrap(icPaste_disabled), 0x55FFFFFF);
+			}
 		}
 
 		new Thread(() -> {
