@@ -20,6 +20,7 @@
         android:id="@+id/h_item_name"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:layout_marginVertical="2dp"
         android:layout_weight="1"
         android:paddingStart="3dp"
         android:paddingTop="3dp"
@@ -34,7 +35,7 @@
         android:visibility="gone" />
 
     <ImageView
-        android:id="@+id/h_item_selected"
+        android:id="@+id/item_selected"
         android:layout_width="30dp"
         android:layout_height="30dp"
         android:visibility="gone" />

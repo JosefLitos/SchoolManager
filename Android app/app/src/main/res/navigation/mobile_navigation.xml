@@ -20,8 +20,7 @@
     <fragment
         android:id="@+id/menu_choose_dir"
         android:name="com.schlmgr.gui.fragments.ChooseDirFragment"
-        android:label="@string/menu_choose_dir"
-        tools:layout="@layout/fragment_choose_dir" />
+        android:label="@string/menu_choose_dir"/>
 
     <fragment
         android:id="@+id/menu_options"
@@ -32,6 +31,5 @@
     <fragment
         android:id="@+id/menu_about"
         android:name="com.schlmgr.gui.fragments.AboutFragment"
-        android:label="@string/app_version"
         tools:layout="@layout/fragment_about" />
 </navigation>

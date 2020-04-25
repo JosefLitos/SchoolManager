@@ -16,7 +16,5 @@
         android:layout_height="wrap_content"
         android:drawableStart="@drawable/ic_add"
         android:gravity="center_vertical"
-        android:text="@string/data_translate"
-        android:textColor="#D000"
         android:textSize="20sp" />
 </LinearLayout>

@@ -4,6 +4,9 @@
         android:id="@+id/more_new_mch"
         android:title="@string/new_mch" />
     <item
+        android:id="@+id/more_import_mch"
+        android:title="@string/import_mch" />
+    <item
         android:id="@+id/more_sort"
         android:title="@string/sort">
         <menu>

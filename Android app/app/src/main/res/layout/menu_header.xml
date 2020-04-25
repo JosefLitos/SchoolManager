@@ -1,39 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/nav_head_layout"
     android:layout_width="match_parent"
-    android:layout_height="?attr/actionBarSize"
+    android:layout_height="55dp"
     android:background="@drawable/side_nav_bar"
-    android:theme="@style/ThemeOverlay.AppCompat.Dark">
+    android:orientation="vertical"
+    android:theme="@style/AppThemeDark">
 
     <TextView
         android:id="@+id/menu_name"
         android:layout_width="wrap_content"
-        android:layout_height="38dp"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
         android:drawableStart="@drawable/ic_app"
         android:drawablePadding="5dp"
-        android:gravity="top"
-        android:paddingTop="3dp"
         android:text="Menu"
-        android:textAppearance="@style/TextAppearance.AppCompat.Body1"
-        android:textSize="30sp"
-        app:layout_constraintBottom_toTopOf="@+id/textView2"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="1.0" />
+        android:textSize="30sp" />
 
-    <TextView
-        android:id="@+id/textView2"
-        android:layout_width="wrap_content"
-        android:layout_height="19dp"
-        android:layout_marginBottom="1dp"
-        android:text="LitosPepa@gmail.com"
-        android:textAlignment="center"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/menu_name" />
-
-</androidx.constraintlayout.widget.ConstraintLayout>
+</LinearLayout>

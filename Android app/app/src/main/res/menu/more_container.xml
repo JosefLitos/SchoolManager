@@ -4,13 +4,13 @@
         <menu>
             <item
                 android:id="@+id/more_new_container"
-                android:title="@string/new_chapter" />
+                android:title="@string/hierarchy_ch" />
             <item
                 android:id="@+id/more_new_word"
-                android:title="@string/new_word" />
+                android:title="@string/hierarchy_word" />
             <item
                 android:id="@+id/more_new_picture"
-                android:title="@string/new_picture" />
+                android:title="@string/hierarchy_picture" />
         </menu>
     </item>
     <item android:title="@string/sort">
