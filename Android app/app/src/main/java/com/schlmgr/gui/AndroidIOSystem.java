@@ -1,15 +1,18 @@
 package com.schlmgr.gui;
 
 import android.Manifest.permission;
+import android.app.Activity;
 import android.content.Context;
 import android.os.Build.VERSION;
+import android.view.View;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.Toast;
 
 import androidx.core.content.ContextCompat;
 
 import com.google.android.material.snackbar.Snackbar;
 import com.schlmgr.R;
-import com.schlmgr.gui.Popup.TextPopup;
+import com.schlmgr.gui.popup.TextPopup;
 import com.schlmgr.gui.list.HierarchyItemModel;
 
 import java.io.File;
@@ -85,6 +88,17 @@ public class AndroidIOSystem extends Formatter.IOSystem {
 		}
 	}
 
+	/**
+	 * This method hides the keyboard from the screen when called.
+	 * Code used from https://medium.com/@rmirabelle/close-hide-the-soft-keyboard-in-android-db1da22b09d2
+	 *
+	 * @param view the view, that initially used the keyboard
+	 */
+	public static void hideKeyboardFrom(View view) {
+		InputMethodManager imm = (InputMethodManager) view.getContext().getSystemService(Activity.INPUT_METHOD_SERVICE);
+		imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
+	}
+
 	public static String visibleFilePath(String path) {
 		if (!path.contains(defDir)) return path;
 		return path.substring(defDir.length());
@@ -150,7 +164,7 @@ public class AndroidIOSystem extends Formatter.IOSystem {
 			int[] i = (int[]) o[0];
 			String msg = activity.getString(R.string.loaded)
 					+ '\n' + activity.getString(R.string.loaded_chaps) + ": " + i[0] + '\n'
-					+ activity.getString(R.string.data_words) + ": " + i[1] + '\n'
+					+ activity.getString(R.string.help_create_word) + ": " + i[1] + '\n'
 					+ activity.getString(R.string.data_translations) + ": " + i[2];
 			showMsg(msg, msg);
 		});
@@ -178,7 +192,7 @@ public class AndroidIOSystem extends Formatter.IOSystem {
 			} catch (Exception e) {
 			}
 			Snackbar.make(activity.findViewById(R.id.content_main), msg, Snackbar.LENGTH_LONG)
-					.setAction(activity.getString(R.string.action_full_text), v -> new TextPopup(msg, fullMsg)).show();
+					.setAction(activity.getString(R.string.action_full_text), v -> new TextPopup(msg, fullMsg)).setTextColor(0xFFEEEEEE).show();
 		}).start();
 	}
 

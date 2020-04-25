@@ -1,9 +1,7 @@
-package com.schlmgr.gui.Popup;
+package com.schlmgr.gui.popup;
 
-import android.content.Context;
 import android.graphics.drawable.ColorDrawable;
 import android.view.Gravity;
-import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.LinearLayout.LayoutParams;
 import android.widget.PopupWindow;
@@ -32,11 +30,12 @@ public abstract class AbstractPopup {
 	}
 
 	final int resId;
+	private boolean backBtnDismiss = true;
 	public PopupWindow pw;
 	private final Runnable creator = () -> create();
 
-	protected AbstractPopup(int rI) {
-		resId = rI;
+	protected AbstractPopup(int resourceID) {
+		resId = resourceID;
 		Controller.addPopupRepaint(creator);
 	}
 
@@ -45,7 +44,9 @@ public abstract class AbstractPopup {
 	}
 
 	public void dismiss(boolean forever) {
+		backBtnDismiss = false;
 		pw.dismiss();
+		//TODO: doesn't this command fit better in onDismissListener()?
 		showed.remove(pw);
 		isActive = false;
 		if (forever) Controller.removePopupRepaint(creator);
@@ -54,9 +55,12 @@ public abstract class AbstractPopup {
 	protected void create() {
 		isActive = isShowing = true;
 		activity.runOnUiThread(() -> {
-			View view = ((LayoutInflater) activity.getSystemService(Context.LAYOUT_INFLATER_SERVICE)).inflate(resId, null);
+			View view = activity.getLayoutInflater().inflate(resId, null);
 			pw = new PopupWindow(view, LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT, true);
-			pw.setOnDismissListener(() -> isShowing = false);
+			pw.setOnDismissListener(() -> {
+				isShowing = false;
+				if (backBtnDismiss) activity.onBackPressed();
+			});
 			view.setOnClickListener(v -> dismiss(true));
 			pw.setBackgroundDrawable(new ColorDrawable(0x90000000));
 			addContent(view);

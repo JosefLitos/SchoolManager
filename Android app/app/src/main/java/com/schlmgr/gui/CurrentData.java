@@ -135,7 +135,7 @@ public class CurrentData {
 	}
 
 	public static class ImportedMchs {
-		public static Set<File> importedMchs;
+		static Set<File> importedMchs;
 
 		public static void importMch(File mchDir) {
 			checkLoaded();
@@ -158,8 +158,8 @@ public class CurrentData {
 						importedMchs.add(new File(s));
 					} catch (Exception e) {
 						Snackbar.make(Controller.activity.getCurrentFocus(),
-								Controller.activity.getString(R.string.object_not_found) + s,
-								Snackbar.LENGTH_LONG).setAction("Action", null).show();
+								Controller.activity.getString(R.string.subject_not_found) + s,
+								Snackbar.LENGTH_LONG).setAction("Action", null).setTextColor(0xFFEEEEEE).show();
 					}
 			}
 		}

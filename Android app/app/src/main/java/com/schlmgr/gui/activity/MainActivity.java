@@ -1,5 +1,6 @@
 package com.schlmgr.gui.activity;
 
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.Environment;
 import android.widget.PopupMenu;
@@ -17,8 +18,8 @@ import com.schlmgr.R;
 import com.schlmgr.gui.AndroidIOSystem;
 import com.schlmgr.gui.Controller;
 import com.schlmgr.gui.CurrentData;
-import com.schlmgr.gui.Popup.AbstractPopup;
 import com.schlmgr.gui.fragments.MainFragment;
+import com.schlmgr.gui.popup.AbstractPopup;
 
 import java.io.File;
 
@@ -27,6 +28,7 @@ import objects.templates.ContainerFile;
 
 import static android.content.pm.PackageManager.PERMISSION_GRANTED;
 import static com.schlmgr.gui.AndroidIOSystem.defDir;
+import static com.schlmgr.gui.fragments.MainFragment.STORAGE_PERMISSION;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -37,17 +39,15 @@ public class MainActivity extends AppCompatActivity {
 	private static Thread background;
 	private boolean exists;
 
+	public static Drawable ic_check_empty;
+	public static Drawable ic_check_filled;
+
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		Controller.activity = this;
-		Controller.dp = getResources().getDimension(R.dimen.dp);
 		Controller.CONTEXT = getApplicationContext();
 		Controller.defaultBack = super::onBackPressed;
-		defDir = Environment.getExternalStorageDirectory().getAbsolutePath();
-		AndroidIOSystem.storageDir = defDir.substring(0, defDir.lastIndexOf(File.separatorChar +
-				(defDir.contains("emulated") ? "emulated" : "")));
-		new AndroidIOSystem().testWrite();
 		setContentView(R.layout.nav_menu);
 		setSupportActionBar(findViewById(R.id.bar));
 		(c.moreButton = findViewById(R.id.bar_more)).setOnClickListener(v -> {
@@ -67,32 +67,41 @@ public class MainActivity extends AppCompatActivity {
 		navController = Navigation.findNavController(this, R.id.content_main);
 		NavigationUI.setupActionBarWithNavController(this, navController, mAppBarConfiguration);
 		NavigationUI.setupWithNavController((NavigationView) findViewById(R.id.nav_menu), navController);
-		if (background == null) (background = new Thread(() -> {
-			if (!Formatter.getPath().getAbsolutePath().contains(defDir + "/Android/data/com.schlmgr")
-					&& !AndroidIOSystem.canWrite()) {
-				runOnUiThread(() -> {
-					Toast.makeText(this, getString(R.string.fail_permission_write)
-							+ AndroidIOSystem.visibleFilePath(Formatter.getPath().getAbsolutePath()) + '\n' +
-							getString(R.string.fail_formatter), Toast.LENGTH_LONG).show();
-					Formatter.resetDir();
-					CurrentData.createMchs();
-					MainFragment.VS.mfInstance.setContent(null, null, 0);
+		if (background == null) {
+			ic_check_empty=getResources().getDrawable(R.drawable.ic_check_box_empty);
+			ic_check_filled=getResources().getDrawable(R.drawable.ic_check_box_filled);
+			Controller.dp = getResources().getDimension(R.dimen.dp);
+			defDir = Environment.getExternalStorageDirectory().getAbsolutePath();
+			AndroidIOSystem.storageDir = defDir.substring(0, defDir.lastIndexOf(File.separatorChar +
+					(defDir.contains("emulated") ? "emulated" : "")));
+			new AndroidIOSystem().testWrite();
+			(background = new Thread(() -> {
+				if (!Formatter.getPath().getAbsolutePath().contains(defDir + "/Android/data/com.schlmgr")
+						&& !AndroidIOSystem.canWrite()) {
+					runOnUiThread(() -> {
+						Toast.makeText(this, getString(R.string.fail_permission_write)
+								+ AndroidIOSystem.visibleFilePath(Formatter.getPath().getAbsolutePath()) + '\n' +
+								getString(R.string.fail_formatter), Toast.LENGTH_LONG).show();
+						Formatter.resetDir();
+						CurrentData.createMchs();
+						MainFragment.VS.mfInstance.setContent(null, null, 0);
+						loaded = true;
+					});
+				} else {
 					loaded = true;
-				});
-			} else {
-				loaded = true;
-				CurrentData.createMchs();
-			}
-			try {
-				while (true) {
-					Thread.sleep(100_000);
-					for (ContainerFile cf : CurrentData.changed) cf.save();
-					CurrentData.changed.clear();
-					if (Thread.interrupted()) break;
+					CurrentData.createMchs();
 				}
-			} catch (Exception e) {
-			}
-		})).start();
+				try {
+					while (true) {
+						Thread.sleep(100_000);
+						for (ContainerFile cf : CurrentData.changed) cf.save();
+						CurrentData.changed.clear();
+						if (Thread.interrupted()) break;
+					}
+				} catch (Exception e) {
+				}
+			})).start();
+		}
 	}
 
 	@Override
@@ -112,7 +121,7 @@ public class MainActivity extends AppCompatActivity {
 	@Override
 	public void onBackPressed() {
 		if (AbstractPopup.isActive) AbstractPopup.clear();
-		else (c != null ? c.currentControl : Controller.defaultBack).run();
+		else (c != null ? c.onBackPressed : Controller.defaultBack).run();
 	}
 
 	@Override
@@ -126,12 +135,11 @@ public class MainActivity extends AppCompatActivity {
 
 	@Override
 	public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-		if (requestCode == 3) {
+		if (requestCode == STORAGE_PERMISSION) {
 			if (grantResults[0] != PERMISSION_GRANTED) {
 				AndroidIOSystem.setCanWrite(false);
 				if (loaded) super.onBackPressed();
 			} else AndroidIOSystem.setCanWrite(true);
-		}
-		super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+		} else super.onRequestPermissionsResult(requestCode, permissions, grantResults);
 	}
 }

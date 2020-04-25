@@ -7,14 +7,15 @@ android {
         applicationId "com.schlmgr"
         minSdkVersion 19
         targetSdkVersion 28
-        versionCode 7
-        versionName "Beta 7.5"
+        versionCode 10
+        versionName "1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            debuggable false
         }
     }
     compileOptions {

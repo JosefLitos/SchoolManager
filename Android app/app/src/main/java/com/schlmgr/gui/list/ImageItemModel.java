@@ -6,18 +6,16 @@ import android.graphics.BitmapFactory;
 import objects.Picture;
 
 public class ImageItemModel {
-	public final Bitmap pic1;
-	public final Picture p1;
-	public final Bitmap pic2;
-	public final Picture p2;
+	public final Bitmap bm1;
+	public final Picture pic1;
+	public final Bitmap bm2;
+	public final Picture pic2;
 
 	public ImageItemModel(Picture p1, Picture p2) {
-		pic1 = BitmapFactory.decodeFile(
-				(this.p1 = p1).getIdentifier().getDir().getAbsolutePath() + "/Pictures/" + p1 + ".jpg");
+		bm1 = BitmapFactory.decodeFile((this.pic1 = p1).getFile().getPath());
 		if (p2 == null) {
-			this.p2 = null;
-			pic2 = null;
-		} else pic2 = BitmapFactory.decodeFile(
-				(this.p2 = p2).getIdentifier().getDir().getAbsolutePath() + "/Pictures/" + p2 + ".jpg");
+			this.pic2 = null;
+			bm2 = null;
+		} else bm2 = BitmapFactory.decodeFile((this.pic2 = p2).getFile().getPath());
 	}
 }

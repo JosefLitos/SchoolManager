@@ -1,4 +1,4 @@
-package com.schlmgr.gui.Popup;
+package com.schlmgr.gui.popup;
 
 import android.view.View;
 import android.widget.TextView;

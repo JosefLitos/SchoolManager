@@ -1,4 +1,4 @@
-package com.schlmgr.gui.Popup;
+package com.schlmgr.gui.popup;
 
 import android.content.ClipData;
 import android.content.ClipboardManager;

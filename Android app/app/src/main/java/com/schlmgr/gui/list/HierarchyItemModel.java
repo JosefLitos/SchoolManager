@@ -56,9 +56,9 @@ public class HierarchyItemModel {
 		Formatter.putSetting("HIMflipAll", flipAllOnClick = on);
 	}
 
-	private boolean flipped;
+	public boolean flipped;
 	public final int position;
-	protected boolean selected;
+	boolean selected;
 
 	public void setSelected(boolean isSelected) {
 		selected = isSelected;
@@ -74,10 +74,6 @@ public class HierarchyItemModel {
 	public String toShow;
 	String info = "";
 
-	public boolean isFlipped() {
-		return flipped;
-	}
-
 	public void flip() {
 		if (!(bd instanceof Word)) return;
 		if (flipped = !flipped) toShow = translates();
@@ -90,16 +86,12 @@ public class HierarchyItemModel {
 	private String translates() {
 		StringBuilder desc = new StringBuilder();
 		StringBuilder trls = new StringBuilder();
-		boolean first = true;
 		for (BasicData trl : ((Word) bd).getChildren(parent)) {
 			trls.append('\n').append(nameParser(trl.getName()));
-			if (!trl.getDesc(parent).isEmpty()) {
-				if (!first) desc.append('\n');
-				else first = false;
-				desc.append(trl.getName()).append(':').append(' ').append(trl.getDesc(parent));
-			}
+			if (!trl.getDesc(parent).isEmpty())
+				desc.append('\n').append(trl.getName()).append(':').append(' ').append(trl.getDesc(parent));
 		}
-		info = desc.toString();
+		info = desc.length() > 0 ? desc.substring(1) : "";
 		return trls.substring(1);
 	}
 
@@ -137,7 +129,7 @@ public class HierarchyItemModel {
 				}
 			} else {
 				if (bd instanceof MainChapter)
-					ic = Controller.activity.getResources().getDrawable(R.drawable.ic_object);
+					ic = Controller.activity.getResources().getDrawable(R.drawable.ic_subject);
 				else ic = Controller.activity.getResources().getDrawable(R.drawable.ic_chapter);
 			}
 		} else if (bd instanceof Reference)

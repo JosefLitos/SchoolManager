@@ -12,6 +12,7 @@ import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 
 import com.schlmgr.R;
+import com.schlmgr.gui.AndroidIOSystem;
 import com.schlmgr.gui.Controller;
 import com.schlmgr.gui.Controller.ControlListener;
 import com.schlmgr.gui.list.HierarchyItemModel;
@@ -46,6 +47,13 @@ public class SettingsFragment extends Fragment implements ControlListener {
 				Test.setAmount(Integer.parseInt(amount.getText().toString()));
 			return true;
 		});
+		amount.setOnFocusChangeListener((v, hasFocus) -> {
+			if (!hasFocus) {
+				if (amount.getText().toString().isEmpty())
+					amount.setText("" + Test.getAmount(), BufferType.EDITABLE);
+				AndroidIOSystem.hideKeyboardFrom(v);
+			}
+		});
 
 		EditText time = root.findViewById(R.id.setts_test_time);
 		time.setText("" + Test.getDefaultTime(), BufferType.EDITABLE);
@@ -53,6 +61,13 @@ public class SettingsFragment extends Fragment implements ControlListener {
 			if (event.getAction() == ACTION_UP)
 				Test.setDefaultTime(Integer.parseInt(time.getText().toString()));
 			return true;
+		});
+		time.setOnFocusChangeListener((v, hasFocus) -> {
+			if (!hasFocus) {
+				if (time.getText().toString().isEmpty())
+					time.setText("" + Test.getDefaultTime(), BufferType.EDITABLE);
+				AndroidIOSystem.hideKeyboardFrom(v);
+			}
 		});
 
 		CompoundButton clever = root.findViewById(R.id.setts_test_clever);
@@ -67,12 +82,7 @@ public class SettingsFragment extends Fragment implements ControlListener {
 
 	@Override
 	public void onResume() {
-		Controller.setCurrentControl(this, 0, false);
+		Controller.setCurrentControl(this, 0, false, false);
 		super.onResume();
-	}
-
-	@Override
-	public void run() {
-		Controller.defaultBack.run();
 	}
 }

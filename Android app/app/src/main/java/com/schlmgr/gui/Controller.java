@@ -11,17 +11,17 @@ import android.view.View.OnClickListener;
 import android.widget.ImageView;
 import android.widget.PopupMenu.OnMenuItemClickListener;
 
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.loader.content.CursorLoader;
 
 import com.schlmgr.R;
+import com.schlmgr.gui.activity.MainActivity;
 
 import java.io.File;
 import java.util.LinkedList;
 import java.util.List;
 
 public class Controller {
-	public static AppCompatActivity activity;
+	public static MainActivity activity;
 	public static Runnable defaultBack;
 	public static float dp;
 	public static Context CONTEXT;
@@ -41,6 +41,7 @@ public class Controller {
 
 	public int menuRes;
 	public ControlListener currentControl;
+	public Runnable onBackPressed = () -> defaultBack.run();
 	public ImageView moreButton;
 	public ImageView selectButton;
 	public final List<Runnable> popupRepaint = new LinkedList<>();
@@ -48,11 +49,13 @@ public class Controller {
 	private boolean taken = false;
 
 	public static boolean isActive(ControlListener test) {
-		return test == control.currentControl;
+		return test == control.currentControl || test != null &&
+				control.currentControl != null && test.getClass() == control.currentControl.getClass();
 	}
 
-	public static void setCurrentControl(ControlListener o, int menuRes, boolean selectVisible) {
+	public static void setCurrentControl(ControlListener o, int menuRes, boolean selectVisible, boolean back) {
 		control.currentControl = o;
+		if (back) control.onBackPressed = o;
 		setMenuRes(menuRes);
 		toggleSelectBtn(selectVisible);
 	}
@@ -70,14 +73,30 @@ public class Controller {
 	}
 
 	public interface ControlListener extends Runnable, OnClickListener, OnMenuItemClickListener {
+		/**
+		 * This method is called when 'back' button is pressed.
+		 */
 		@Override
 		default void run() {
 		}
 
+		/**
+		 * This method is called when the user clicks on the 'edit' icon in the right corner
+		 * of the application bar.
+		 *
+		 * @param v the view that has been clicked
+		 */
 		@Override
 		default void onClick(View v) {
 		}
 
+		/**
+		 * Called when a menu item is clicked. This method should react on the item click and do
+		 * the appropriate actions.
+		 *
+		 * @param item the item that has been clicked.
+		 * @return {@code true} if the item click has been processed.
+		 */
 		@Override
 		default boolean onMenuItemClick(MenuItem item) {
 			return false;

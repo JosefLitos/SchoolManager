@@ -10,26 +10,29 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 
 import com.schlmgr.R;
-import com.schlmgr.gui.Popup.TextPopup;
+import com.schlmgr.gui.CurrentData;
+import com.schlmgr.gui.popup.TextPopup;
 
 import java.util.List;
 
+import IOSystem.Formatter;
+import objects.MainChapter;
 import objects.Picture;
 import objects.Reference;
 
-import static com.schlmgr.gui.Controller.activity;
 import static com.schlmgr.gui.Controller.dp;
+import static com.schlmgr.gui.activity.MainActivity.ic_check_empty;
+import static com.schlmgr.gui.activity.MainActivity.ic_check_filled;
 
 public class HierarchyAdapter extends OpenListAdapter<HierarchyItemModel> {
 	private LayoutInflater li;
-	public List<HierarchyItemModel> list;
 
-	public HierarchyAdapter(@NonNull Context context, @NonNull List<HierarchyItemModel> objects, Runnable occ) {
-		super(context, R.layout.item_hierarchy, R.id.h_item_name, objects, occ);
+	public HierarchyAdapter(@NonNull Context context, @NonNull List<HierarchyItemModel> objects, Runnable occ, boolean selectActivity) {
+		super(context, R.layout.item_hierarchy, R.id.h_item_name, objects, occ, selectActivity);
 		li = LayoutInflater.from(context);
-		list = objects;
 	}
 
+	@Override
 	public View getView(int index, View view, ViewGroup parent) {
 		if (view == null) view = li.inflate(R.layout.item_hierarchy, parent, false);
 		HierarchyItemModel item = list.get(index);
@@ -41,41 +44,50 @@ public class HierarchyAdapter extends OpenListAdapter<HierarchyItemModel> {
 			item.ic.setBounds((int) dp, 0, (int) (dp * 33), (int) (dp * 33));
 		else item.ic.setBounds(0, 0, (int) (dp * 30), (int) (dp * 30));
 		num.setCompoundDrawablesRelative(null, null, item.ic, null);
-		if (!item.info.isEmpty()) {
-			View iv = view.findViewById(R.id.h_item_info);
+		View iv = view.findViewById(R.id.h_item_info);
+		if (!selectActivity && !item.info.isEmpty()) {
 			iv.setVisibility(View.VISIBLE);
 			iv.setOnClickListener((v) -> new TextPopup(item.info, item.info));
-		} else view.findViewById(R.id.h_item_info).setVisibility(View.GONE);
-		if (selected > -1) {
-			ImageView select = view.findViewById(R.id.h_item_selected);
+		} else if (iv.getVisibility() != View.GONE) iv.setVisibility(View.GONE);
+		if (selected > -1 || selectActivity) {
+			ImageView select = view.findViewById(R.id.item_selected);
 			select.setVisibility(View.VISIBLE);
-//			DrawableCompat.setTint(DrawableCompat.wrap(checkedIcon), getResources().getColor(R.color.colorPrimaryHeader));
-			select.setImageDrawable(!item.selected ? activity.getResources().getDrawable(R.drawable.ic_check_box_empty)
-					: activity.getResources().getDrawable(R.drawable.ic_check_box_filled));
+			select.setImageDrawable(item.selected ? ic_check_filled : ic_check_empty);
 			select.setOnClickListener(v -> {
-				select.setImageDrawable(!(item.selected = !item.selected) ? activity.getResources().getDrawable(
-						R.drawable.ic_check_box_empty) : activity.getResources().getDrawable(R.drawable.ic_check_box_filled));
+				select.setImageDrawable((item.selected = !item.selected) ? ic_check_filled : ic_check_empty);
 				selected += item.selected ? 1 : -1;
 				if (item.bd instanceof Reference) ref += item.selected ? 1 : -1;
-				occ.run();
+				if (occ != null) occ.run();
 			});
-		} else view.findViewById(R.id.h_item_selected).setVisibility(View.GONE);
+		} else view.findViewById(R.id.item_selected).setVisibility(View.GONE);
+		if (item.bd instanceof MainChapter &&
+				!((MainChapter) item.bd).getDir().getPath().contains(Formatter.getPath().getPath())) {
+			ImageView remove = view.findViewById(R.id.item_remove);
+			remove.setVisibility(View.VISIBLE);
+			remove.setOnClickListener(v -> {
+				MainChapter mch = (MainChapter) item.bd;
+				CurrentData.ImportedMchs.removeMch(mch.getDir());
+				mch.close();
+				list.remove(item);
+				notifyDataSetChanged();
+			});
+		}
 		return view;
 	}
 
 	public static int background(int sf) {
 		if (sf == -2) return 0;
-		if (sf == -1) return 0x400000FF;
-		if (sf == 0) return 0x40FF0000;
-		if (sf == 50) return 0x40FFFF00;
-		if (sf == 100) return 0x4000FF00;
+		if (sf == -1) return 0x600000FF;
+		if (sf == 0) return 0x60FF0000;
+		if (sf == 50) return 0x60FFFF00;
+		if (sf == 100) return 0x6000FF00;
 		String ret;
 		if (sf < 50) {
 			ret = Integer.toHexString(sf * 256 / 50);
-			return Integer.parseInt("40FF" + (ret.length() == 1 ? '0' + ret : ret) + "00", 16);
+			return Integer.parseInt("60FF" + (ret.length() == 1 ? '0' + ret : ret) + "00", 16);
 		} else {
 			ret = Integer.toHexString((100 - sf) * 256 / 50);
-			return Integer.parseInt("40" + (ret.length() == 1 ? '0' + ret : ret) + "FF00", 16);
+			return Integer.parseInt("60" + (ret.length() == 1 ? '0' + ret : ret) + "FF00", 16);
 		}
 	}
 }

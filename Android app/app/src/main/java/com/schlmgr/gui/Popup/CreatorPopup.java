@@ -1,4 +1,4 @@
-package com.schlmgr.gui.Popup;
+package com.schlmgr.gui.popup;
 
 import android.view.LayoutInflater;
 import android.view.View;
@@ -14,8 +14,8 @@ import static com.schlmgr.gui.Controller.activity;
 public class CreatorPopup extends AbstractPopup {
 
 	public Button ok;
-	public static EditText et_name;
-	public static EditText et_desc;
+	public EditText et_name;
+	public EditText et_desc;
 	public View view;
 
 	final String type;
@@ -40,12 +40,7 @@ public class CreatorPopup extends AbstractPopup {
 		ok = view.findViewById(R.id.ok);
 		view.findViewById(R.id.cancel).setOnClickListener(x -> dismiss());
 		View include = toInclude.onInclude(activity.getLayoutInflater(), this);
-		if (include != null) ((LinearLayout) et_desc.getParent()).addView(include, 3);
-	}
-
-	public void dismiss(boolean forever) {
-		if (forever) et_name = et_desc = null;
-		super.dismiss(forever);
+		if (include != null) ((LinearLayout) et_desc.getParent()).addView(include, 2);
 	}
 
 	public interface Includer {

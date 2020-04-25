@@ -1,4 +1,4 @@
-package com.schlmgr.gui.Popup;
+package com.schlmgr.gui.popup;
 
 import android.graphics.Bitmap;
 import android.view.View;

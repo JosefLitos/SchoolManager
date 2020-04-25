@@ -10,24 +10,23 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 
 import com.schlmgr.R;
-import com.schlmgr.gui.Popup.TextPopup;
+import com.schlmgr.gui.popup.TextPopup;
 
 import java.util.List;
 
 import objects.Picture;
 import objects.Reference;
 
-import static com.schlmgr.gui.Controller.activity;
 import static com.schlmgr.gui.Controller.dp;
+import static com.schlmgr.gui.activity.MainActivity.ic_check_empty;
+import static com.schlmgr.gui.activity.MainActivity.ic_check_filled;
 import static com.schlmgr.gui.list.HierarchyAdapter.background;
 
 public class SearchAdapter extends OpenListAdapter<SearchItemModel> {
 	private LayoutInflater li;
-	public final List<SearchItemModel> list;
 
-	public SearchAdapter(@NonNull Context context, @NonNull List<SearchItemModel> objects, Runnable occ) {
-		super(context, R.layout.item_search, R.id.h_item_name, objects, occ);
-		list = objects;
+	public SearchAdapter(@NonNull Context context, @NonNull List<SearchItemModel> objects, Runnable occ, boolean selectActivity) {
+		super(context, R.layout.item_search, R.id.h_item_name, objects, occ, selectActivity);
 		li = LayoutInflater.from(context);
 	}
 
@@ -43,24 +42,22 @@ public class SearchAdapter extends OpenListAdapter<SearchItemModel> {
 			item.ic.setBounds((int) dp, 0, (int) (dp * 33), (int) (dp * 33));
 		else item.ic.setBounds(0, 0, (int) (dp * 30), (int) (dp * 30));
 		num.setCompoundDrawablesRelative(null, null, item.ic, null);
-		if (!item.info.isEmpty()) {
-			View iv = view.findViewById(R.id.h_item_info);
+		View iv = view.findViewById(R.id.h_item_info);
+		if (!selectActivity && !item.info.isEmpty()) {
 			iv.setVisibility(View.VISIBLE);
 			iv.setOnClickListener((v) -> new TextPopup(item.info, item.info));
-		} else view.findViewById(R.id.h_item_info).setVisibility(View.GONE);
-		if (selected > -1) {
-			ImageView select = view.findViewById(R.id.h_item_selected);
+		} else if (iv.getVisibility() != View.GONE) iv.setVisibility(View.GONE);
+		if (selectActivity || selected > -1) {
+			ImageView select = view.findViewById(R.id.item_selected);
 			select.setVisibility(View.VISIBLE);
-			select.setImageDrawable(!item.selected ? activity.getResources().getDrawable(R.drawable.ic_check_box_empty)
-					: activity.getResources().getDrawable(R.drawable.ic_check_box_filled));
+			select.setImageDrawable(item.selected ? ic_check_filled:ic_check_empty);
 			select.setOnClickListener(v -> {
-				select.setImageDrawable(!(item.selected = !item.selected) ? activity.getResources().getDrawable(
-						R.drawable.ic_check_box_empty) : activity.getResources().getDrawable(R.drawable.ic_check_box_filled));
+				select.setImageDrawable((item.selected = !item.selected) ? ic_check_filled:ic_check_empty);
 				selected += item.selected ? 1 : -1;
 				if (item.bd instanceof Reference) ref += item.selected ? 1 : -1;
-				occ.run();
+				if (occ != null) occ.run();
 			});
-		} else view.findViewById(R.id.h_item_selected).setVisibility(View.GONE);
+		} else view.findViewById(R.id.item_selected).setVisibility(View.GONE);
 		return view;
 	}
 }
