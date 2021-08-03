@@ -4,9 +4,7 @@ android {
     signingConfigs {
         debug {
             storeFile file('/home/kepis/.android/keystore.jks')
-            storePassword 'b.l68LIT'
             keyAlias 'key0'
-            keyPassword 'b.l68LIT'
         }
     }
     compileSdkVersion 30
