@@ -308,7 +308,7 @@ public class SelectDirActivity extends PopupCareActivity
 					}
 				}
 				super.onActivityResult(requestCode, resultCode, data);
-			}, "MFrag onActivityResult").start();
+			}, "DirAct onActivityResult").start();
 		}
 		super.onBackPressed();
 	}

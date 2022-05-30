@@ -223,7 +223,7 @@ public class MainFragment extends Fragment
 										him.bd = ((SemiElementContainer) him.bd).convert();
 									position = cp.np.getValue();
 									if (position != him.position) him.parent.putChild(him.parent.removeChild(him.bd),
-												him.bd, position - 1);
+											him.bd, position - 1);
 									CurrentData.save(backLog.path);
 								} else ((MainChapter) him.bd).save();
 								VS.contentAdapter.selected = -1;
@@ -830,11 +830,10 @@ public class MainFragment extends Fragment
 							activity.getString(R.string.action_chooser_file)), WORD_READ);
 					break;
 				case R.id.more_export_word:
-					i = new Intent(Intent.ACTION_OPEN_DOCUMENT);
-					i.setType("*/*");
+					i = new Intent(Intent.ACTION_CREATE_DOCUMENT).setType("text/plain");
+					i.putExtra(Intent.EXTRA_TITLE, backLog.path.get(-1).getName() + ".txt");
 					i.addCategory(Intent.CATEGORY_OPENABLE);
-					startActivityForResult(Intent.createChooser(i,
-							activity.getString(R.string.action_chooser_file)), WORD_WRITE);
+					startActivityForResult(i, WORD_WRITE);
 					break;
 				case R.id.more_import_mch:
 					SelectDirActivity.importing = true;
@@ -911,6 +910,7 @@ public class MainFragment extends Fragment
 						}
 						break;
 					case WORD_WRITE:
+						System.out.println(data.getData());
 						new SimpleWriter(new UriPath(data.getData()), new Container[]{
 								(Container) backLog.path.get(-1), (Container) backLog.path.get(-2)});
 						break;

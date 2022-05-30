@@ -94,6 +94,7 @@ public class AboutFragment extends Fragment implements ControlListener {
 			versions_beta.setTgl(root);
 			RecyclerView rvRelease = (RecyclerView) versions_release.toToggle;
 			String[][] releases = {
+					{"1.6.3", "- Fixed SAF file exporting"},
 					{"1.6.2", "- popup background now does nothing\n" +
 							"- fixed description not updating\n" +
 							"- test time now calculated based on time set for one item\n" +
