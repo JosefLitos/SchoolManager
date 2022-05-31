@@ -824,16 +824,23 @@ public class MainFragment extends Fragment
 					break;
 				case R.id.more_import_word:
 					i = new Intent(Intent.ACTION_GET_CONTENT);
-					i.setType("*/*");
+					i.setType("text/plain");
 					i.addCategory(Intent.CATEGORY_OPENABLE);
 					startActivityForResult(Intent.createChooser(i,
 							activity.getString(R.string.action_chooser_file)), WORD_READ);
 					break;
 				case R.id.more_export_word:
-					i = new Intent(Intent.ACTION_CREATE_DOCUMENT).setType("text/plain");
-					i.putExtra(Intent.EXTRA_TITLE, backLog.path.get(-1).getName() + ".txt");
-					i.addCategory(Intent.CATEGORY_OPENABLE);
-					startActivityForResult(i, WORD_WRITE);
+					if (VERSION.SDK_INT < 30) {
+						i = new Intent(Intent.ACTION_OPEN_DOCUMENT).setType("text/plain");
+						i.addCategory(Intent.CATEGORY_OPENABLE);
+						startActivityForResult(Intent.createChooser(i,
+								activity.getString(R.string.action_chooser_file)), WORD_WRITE);
+					} else {
+						i = new Intent(Intent.ACTION_CREATE_DOCUMENT).setType("text/plain");
+						i.putExtra(Intent.EXTRA_TITLE, backLog.path.get(-1).getName() + ".txt");
+						i.addCategory(Intent.CATEGORY_OPENABLE);
+						startActivityForResult(i, WORD_WRITE);
+					}
 					break;
 				case R.id.more_import_mch:
 					SelectDirActivity.importing = true;
@@ -910,9 +917,21 @@ public class MainFragment extends Fragment
 						}
 						break;
 					case WORD_WRITE:
-						System.out.println(data.getData());
-						new SimpleWriter(new UriPath(data.getData()), new Container[]{
-								(Container) backLog.path.get(-1), (Container) backLog.path.get(-2)});
+						if (VS.contentAdapter.selected < 1) {
+							new SimpleWriter(new UriPath(data.getData()), new Container[]{
+									(Container) backLog.path.get(-1), (Container) backLog.path.get(-2)});
+							break;
+						}
+						Container[][] toExport = new Container[VS.contentAdapter.selected][2];
+						Container parent = (Container) backLog.path.get(-1);
+						int i = 0;
+						for (HierarchyItemModel him : VS.contentAdapter.list)
+							if (him.isSelected() && him.bd instanceof Container) {
+								toExport[i][0] = (Container) him.bd;
+								toExport[i][1] = parent;
+								i++;
+							}
+						new SimpleWriter(new UriPath(data.getData()), toExport);
 						break;
 					case IMAGE_PICK:
 						defaultReacts.get("NotifyNewImage")
