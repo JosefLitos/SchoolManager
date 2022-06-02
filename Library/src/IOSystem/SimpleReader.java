@@ -56,14 +56,7 @@ public final class SimpleReader {
 				case '\\':
 					if (i + 1 >= src.length()) break;
 					char ch2 = src.charAt(++i);
-						switch (ch2) {
-							case '[':
-								if (sb.length() > 0) current.add(new Data(sb.toString().trim(),
-									 self.getIdentifier()).addPar(self).addDesc(getDescription()));
-								else throw report(self.getName() + " - line " + line + ":\n'"
-									 + src.substring(lineStart, i + 1) + "'\nExpected text. Got '\\['.");
-								sb.setLength(0);
-								break;
+					switch (ch2) {
 						case '\\':
 						case '/':
 						case '(':
@@ -72,6 +65,8 @@ public final class SimpleReader {
 						case ';':
 						case '=':
 						case '→':
+						case '[':
+						case ']':
 							sb.append(ch2);
 							break;
 						default:
@@ -97,7 +92,7 @@ public final class SimpleReader {
 						current = translates;
 						break;
 					} else throw report(self.getName() + " - line " + line + ":\n'"
-						 + src.substring(lineStart, i + 1) + "'\nExpected '\\[', '\\n' or text. Got '" + ch + "'.");
+						 + src.substring(lineStart, i + 1) + "'\nExpected '[', '\\n' or text. Got '" + ch + "'.");
 				case '\r':
 					i++;
 				case '\n':
@@ -113,7 +108,7 @@ public final class SimpleReader {
 							if (carrier != null) carrier.add(w);
 						}
 					} else throw report(self.getName() + " - line " + line + ":\n'"
-						 + src.substring(lineStart, i) + "'\nExpected ';' and text, or '{'. Got '\\n'.");
+						 + src.substring(lineStart, i) + "'\nExpected ';' / '=' / '→' text, or '{'. Got '\\n'.");
 					words.clear();
 					translates.clear();
 					current = words;
@@ -146,7 +141,14 @@ public final class SimpleReader {
 						if (carrier != null) carrier.add(child);
 						loadContent(null, child, self);
 						result[0]++;
-					} else sb.append(ch);
+					} else sb.append('{');
+					break;
+				case '[':
+					if (sb.length() > 0) current.add(new Data(sb.toString().trim(),
+							self.getIdentifier()).addPar(self).addDesc(getDescription()));
+					else throw report(self.getName() + " - line " + line + ":\n'"
+						 + src.substring(lineStart, i + 1) + "'\nExpected text. Got '['.");
+					sb.setLength(0);
 					break;
 				case ' ':
 				case '\t':
@@ -176,14 +178,10 @@ public final class SimpleReader {
 		while (++i < src.length()) {
 			switch (ch = src.charAt(i)) {
 				case '\\':
-					char ch2 = src.charAt(++i);
-						switch (ch2) {
-							case ']':
-								return sb.toString();
-							default:
-								sb.append(ch2);
-						}
+					sb.append(src.charAt(++i));
 					break;
+				case ']':
+					return sb.toString().trim();
 				case '\n':
 					line++;
 				default:
@@ -192,7 +190,7 @@ public final class SimpleReader {
 		}
 		if (i >= src.length()) {
 			throw report("line " + line + ":\n'" + src.substring(lineStart, i - lineStart > 20 ? lineStart
-				 + 20 : i) + "'\nExpected '\\]' (end of description section). Reached end of file.");
+				 + 20 : i) + "'\nExpected ']' (end of description section). Reached end of file.");
 		}
 		return sb.toString().trim();
 	}

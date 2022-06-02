@@ -399,6 +399,7 @@ public class MainFragment extends Fragment
 						else {
 							backLog.adapter.addItem(him);
 							him.parent = np;
+							him.position = backLog.adapter.getItemCount();
 						}
 					}
 				}
@@ -419,6 +420,11 @@ public class MainFragment extends Fragment
 			}
 			CurrentData.save(backLog.path);
 			VS.pasteData.srcView.list.removeAll(VS.pasteData.src);
+			int i = 0;
+			for (Object him :
+					VS.pasteData.srcView.list) {
+				((HierarchyItemModel) him).position = i++;
+			}
 			VS.pasteData.srcView.notifyDataSetChanged();
 			VS.pasteData = null;
 			Controller.toggleSelectBtn(true);
@@ -923,14 +929,14 @@ public class MainFragment extends Fragment
 							break;
 						}
 						Container[][] toExport = new Container[VS.contentAdapter.selected][2];
-						Container parent = (Container) backLog.path.get(-1);
 						int i = 0;
 						for (HierarchyItemModel him : VS.contentAdapter.list)
 							if (him.isSelected() && him.bd instanceof Container) {
 								toExport[i][0] = (Container) him.bd;
-								toExport[i][1] = parent;
-								i++;
+								toExport[i++][1] = him.parent;
 							}
+						VS.contentAdapter.selected = -1;
+						setSelectOpts(false);
 						new SimpleWriter(new UriPath(data.getData()), toExport);
 						break;
 					case IMAGE_PICK:
