@@ -98,21 +98,6 @@ public class MainActivity extends PopupCareActivity {
 			new AndroidIOSystem();
 			AndroidIOSystem.testWrite();
 			(background = new Thread(() -> {
-				if (!Formatter.getSubjectsDir().getOriginalName().contains(defDir
-						+ "/Android/data/com.schlmgr") && !AndroidIOSystem.canWrite()) {
-					runOnUiThread(() -> {
-						Toast.makeText(this, getString(R.string.fail_permission_write)
-								+ AndroidIOSystem.visibleInternalPath(Formatter.getSubjectsDir().getOriginalName())
-								+ '\n' + getString(R.string.fail_formatter), Toast.LENGTH_LONG).show();
-						Formatter.resetDir();
-						CurrentData.createMchs();
-						MainFragment.VS.mfInstance.setContent(null, null, 0);
-						loaded = true;
-					});
-				} else {
-					loaded = true;
-					CurrentData.createMchs();
-				}
 				try {
 					while (true) {
 						Thread.sleep(100_000);
@@ -123,6 +108,20 @@ public class MainActivity extends PopupCareActivity {
 				} catch (Exception e) {
 				}
 			}, "MA background")).start();
+			if (!Formatter.getSubjectsDir().getOriginalName().contains(defDir
+					+ "/Android/data/com.schlmgr") && !AndroidIOSystem.canWrite() ||
+					!Formatter.getSubjectsDir().exists()) {
+				Toast.makeText(this, getString(R.string.fail_permission_write)
+						+ AndroidIOSystem.visibleInternalPath(Formatter.getSubjectsDir().getOriginalName())
+						+ '\n' + getString(R.string.fail_formatter), Toast.LENGTH_LONG).show();
+				Formatter.resetDir();
+				CurrentData.createMchs();
+				MainFragment.VS.mfInstance.setContent(null, null, 0);
+				loaded = true;
+			} else {
+				CurrentData.createMchs();
+				loaded = true;
+			}
 		}
 	}
 

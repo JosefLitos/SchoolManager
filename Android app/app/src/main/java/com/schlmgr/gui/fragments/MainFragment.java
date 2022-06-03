@@ -905,7 +905,7 @@ public class MainFragment extends Fragment
 							List<BasicData> currentPath = (List<BasicData>) backLog.path.clone();
 							Container self = (Container) backLog.path.get(-1),
 									par = (Container) backLog.path.get(-2);
-							SimpleReader content = new SimpleReader(new UriPath(data.getData()).load(), self, par);
+							SimpleReader content = new SimpleReader(new UriPath(data.getData(), false).load(), self, par);
 							if (backLog.adapter instanceof HierarchyAdapter) {
 								HierarchyAdapter ha = (HierarchyAdapter) backLog.adapter;
 								int old = ha.list.size();
@@ -924,7 +924,7 @@ public class MainFragment extends Fragment
 						break;
 					case WORD_WRITE:
 						if (VS.contentAdapter.selected < 1) {
-							new SimpleWriter(new UriPath(data.getData()), new Container[]{
+							new SimpleWriter(new UriPath(data.getData(), false), new Container[]{
 									(Container) backLog.path.get(-1), (Container) backLog.path.get(-2)});
 							break;
 						}
@@ -937,17 +937,17 @@ public class MainFragment extends Fragment
 							}
 						VS.contentAdapter.selected = -1;
 						setSelectOpts(false);
-						new SimpleWriter(new UriPath(data.getData()), toExport);
+						new SimpleWriter(new UriPath(data.getData(), false), toExport);
 						break;
 					case IMAGE_PICK:
 						defaultReacts.get("NotifyNewImage")
-								.react(new UriPath(data.getData()));
+								.react(new UriPath(data.getData(), false));
 						break;
 					case SCH_READ:
 						try {
 							List<BasicData> currentPath = (List<BasicData>) backLog.path.clone();
 							((Container) backLog.path.get(-1)).putChild((Container) backLog.path.get(-2),
-									new ContentReader(new UriPath(data.getData()).load(), (MainChapter) backLog.path.get(0))
+									new ContentReader(new UriPath(data.getData(), false).load(), (MainChapter) backLog.path.get(0))
 											.mContent.getItem((Container) backLog.path.get(-1)));
 							CurrentData.save(currentPath);
 						} catch (Exception e) {
