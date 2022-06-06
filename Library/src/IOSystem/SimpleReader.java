@@ -17,12 +17,13 @@ import objects.templates.BasicData;
  * Used sytnax:
  * <ul>
  * <li>chapter:
- * <p>	name of the chapter
- * <p>	{
- * <p>	content of that chapter (including another chapters)
+ * <p>	name of the chapter {
+ * <p>	content of that chapter (including other chapters)
  * <p>	}
  * <li>word:
  * <p>	name\another name\more synonyms;translate\a synonym\...
+ * <li> item description:
+ * <p> ... [description, can contain more lines]
  * </ul>
  *
  * @author Josef Litoš

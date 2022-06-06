@@ -65,8 +65,8 @@ public class MainActivity extends PopupCareActivity {
 				v -> c.currentControl.onClick(v));
 		// Passing each menu ID as a set of Ids because each
 		// menu should be considered as top level destinations.
-		mAppBarConfiguration = new AppBarConfiguration.Builder(R.id.menu_objects, R.id.test,
-				R.id.menu_choose_dir, R.id.menu_options, R.id.menu_about)
+		mAppBarConfiguration = new AppBarConfiguration.Builder(R.id.menu_objects,
+				R.id.test, R.id.menu_options, R.id.menu_about)
 				.setDrawerLayout(findViewById(R.id.drawer_layout)).build();
 		navController = Navigation.findNavController(this, R.id.content_main);
 		NavigationUI.setupActionBarWithNavController(this, navController, mAppBarConfiguration);
